@@ -78,18 +78,29 @@ export async function generateLabelPdf(
     if (i > 0) doc.addPage([w, h], w > h ? "landscape" : "portrait");
     const pad = 1;
     const portrait = h > w * 1.4; // tall labels → QR en haut, texte en bas
-    const square   = Math.abs(w - h) < 2; // labels carrés → QR seul
+    const square   = Math.abs(w - h) < 2; // labels carrés (23×23) → QR + animal + ID compact
 
     // QR : toujours carré, jamais distordu.
     const qrMax = portrait
       ? Math.min(w - pad * 2, h * 0.6)
       : Math.min(w * 0.5, h - pad * 2);
-    const qrSize = square ? Math.min(w, h) - pad * 2 : qrMax;
-    const qx = portrait ? (w - qrSize) / 2 : pad;
+    const qrSize = square ? Math.min(w, h) * 0.6 : qrMax;
+    const qx = square ? pad : (portrait ? (w - qrSize) / 2 : pad);
     const qy = pad;
     doc.addImage(qr, "PNG", qx, qy, qrSize, qrSize);
 
-    if (square) continue; // 23×23 : QR seul, aucun texte (illisible sinon).
+    if (square) {
+      // 23×23 : QR à gauche, animal + N°ID à droite (très compact).
+      const tx2 = qx + qrSize + 0.8;
+      const tw2 = w - tx2 - pad;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(5);
+      if (data.animal) doc.text(String(data.animal), tx2, pad + 2, { maxWidth: tw2 });
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(4.5);
+      doc.text(`N°${data.id}`, tx2, pad + 4.8, { maxWidth: tw2 });
+      continue;
+    }
 
     // Zone texte
     const tx = portrait ? pad : qrSize + pad * 2;
