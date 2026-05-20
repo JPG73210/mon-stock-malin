@@ -45,12 +45,14 @@ function RecherchePage() {
     // search products by code
     const { data: prod } = await supabase.from("products").select("*").eq("code", code).is("deleted_at", null).maybeSingle();
     if (prod) {
+      if (mode === "details") { setEditProduct(prod); return; }
       addHit({ id: prod.id, kind: "product", label: prod.produit, sub: `${prod.code} · ${prod.emplacement}`, raw: prod });
       return;
     }
     // search wine by barcode
     const { data: wine } = await supabase.from("wines").select("*").eq("code_barre", text.trim()).is("deleted_at", null).maybeSingle();
     if (wine) {
+      if (mode === "details") { setEditWine(wine); return; }
       addHit({ id: wine.id, kind: "wine", label: wine.chateau ?? "Vin", sub: `${wine.type_vin} ${wine.millesime ?? ""}`.trim(), raw: wine });
       return;
     }
