@@ -95,10 +95,9 @@ function EntreePage() {
       qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
       qc.invalidateQueries({ queryKey: ["print-jobs"] });
       toast.success(`Produit ${code} enregistré × ${f.quantite}`);
-      const snapshot = { ...f, _code: code };
+      if (mode === "airprint") await printLabel(code);
+      if (mode === "agent") await sendToAgent(code);
       setF(empty);
-      if (mode === "airprint") await printLabel(snapshot._code);
-      if (mode === "agent") await sendToAgent(snapshot._code);
     },
     onError: (e: any) => toast.error(e.message ?? "Erreur"),
   });
@@ -214,18 +213,17 @@ function EntreePage() {
             <Textarea value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} rows={2} />
           </Field>
           <div className="flex flex-wrap gap-2 pt-2">
-            <Button onClick={() => save.mutate(false)} disabled={save.isPending}>
+            <Button onClick={() => save.mutate("none")} disabled={save.isPending}>
               <Save className="mr-2 h-4 w-4" /> Enregistrer
             </Button>
-            <Button variant="secondary" onClick={() => save.mutate(true)}
+            <Button variant="secondary" onClick={() => save.mutate("airprint")}
               disabled={save.isPending || f.etiquette_format === "Pas d'étiquettes"}>
               <Printer className="mr-2 h-4 w-4" /> Enregistrer &amp; AirPrint
             </Button>
-            <Button variant="outline" onClick={async () => {
-              await save.mutateAsync(false);
-            }} disabled={save.isPending || f.etiquette_format === "Pas d'étiquettes"}
-              title="Envoyer à l'agent local après enregistrement (utiliser le bouton ci-dessous une fois enregistré)">
-              <Send className="mr-2 h-4 w-4" /> Enregistrer
+            <Button variant="outline" onClick={() => save.mutate("agent")}
+              disabled={save.isPending || f.etiquette_format === "Pas d'étiquettes"}
+              title="Envoyer à la file d'impression de l'agent local">
+              <Send className="mr-2 h-4 w-4" /> Enregistrer &amp; envoyer à l'agent
             </Button>
             <Button variant="ghost" onClick={() => setF(empty)}>Réinitialiser</Button>
           </div>
