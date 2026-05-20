@@ -14,13 +14,210 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      label_templates: {
+        Row: {
+          created_at: string
+          file_url: string | null
+          format: string
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_url?: string | null
+          format: string
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          file_url?: string | null
+          format?: string
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      product_counters: {
+        Row: {
+          last_num: number
+          letters: string
+          user_id: string
+          year_prefix: string
+        }
+        Insert: {
+          last_num?: number
+          letters: string
+          user_id: string
+          year_prefix: string
+        }
+        Update: {
+          last_num?: number
+          letters?: string
+          user_id?: string
+          year_prefix?: string
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          animal: string | null
+          bague: string | null
+          code: string
+          created_at: string
+          date_creation: string
+          deleted_at: string | null
+          emplacement: string
+          etiquette_format: string
+          fruit: string | null
+          id: string
+          needs_label: boolean
+          notes: string | null
+          poids: number | null
+          produit: string
+          quantite: number
+          unite_poids: string | null
+          updated_at: string
+          user_id: string
+          version: string | null
+        }
+        Insert: {
+          animal?: string | null
+          bague?: string | null
+          code: string
+          created_at?: string
+          date_creation?: string
+          deleted_at?: string | null
+          emplacement: string
+          etiquette_format?: string
+          fruit?: string | null
+          id?: string
+          needs_label?: boolean
+          notes?: string | null
+          poids?: number | null
+          produit: string
+          quantite?: number
+          unite_poids?: string | null
+          updated_at?: string
+          user_id: string
+          version?: string | null
+        }
+        Update: {
+          animal?: string | null
+          bague?: string | null
+          code?: string
+          created_at?: string
+          date_creation?: string
+          deleted_at?: string | null
+          emplacement?: string
+          etiquette_format?: string
+          fruit?: string | null
+          id?: string
+          needs_label?: boolean
+          notes?: string | null
+          poids?: number | null
+          produit?: string
+          quantite?: number
+          unite_poids?: string | null
+          updated_at?: string
+          user_id?: string
+          version?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          id: string
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
+      wines: {
+        Row: {
+          chateau: string | null
+          code_barre: string | null
+          couleur: string | null
+          created_at: string
+          deleted_at: string | null
+          emplacement: string | null
+          favori: boolean
+          id: string
+          millesime: number | null
+          notes: string | null
+          photo_url: string | null
+          quantite: number
+          type_vin: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          chateau?: string | null
+          code_barre?: string | null
+          couleur?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          emplacement?: string | null
+          favori?: boolean
+          id?: string
+          millesime?: number | null
+          notes?: string | null
+          photo_url?: string | null
+          quantite?: number
+          type_vin?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          chateau?: string | null
+          code_barre?: string | null
+          couleur?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          emplacement?: string | null
+          favori?: boolean
+          id?: string
+          millesime?: number | null
+          notes?: string | null
+          photo_url?: string | null
+          quantite?: number
+          type_vin?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_product_code: {
+        Args: {
+          _animal: string
+          _date: string
+          _fruit: string
+          _produit: string
+          _user_id: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
