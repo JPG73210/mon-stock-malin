@@ -41,7 +41,10 @@ function RecherchePage() {
     try {
       const parsed = JSON.parse(text);
       if (parsed.id) code = parsed.id;
-    } catch {}
+    } catch {
+      // Ancien format pipe-séparé : "SP0013||Saucisson|Porc|1|||01/01/2026|"
+      if (code.includes("|")) code = code.split("|")[0].trim();
+    }
     // search products by code
     const { data: prod } = await supabase.from("products").select("*").eq("code", code).is("deleted_at", null).maybeSingle();
     if (prod) {
