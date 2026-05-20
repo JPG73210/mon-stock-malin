@@ -1,6 +1,6 @@
 import { Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import {
-  Beef, Wine, Search, Trash2, LayoutDashboard, PackagePlus, LogOut, Menu, X,
+  Beef, Wine, Search, Trash2, LayoutDashboard, PackagePlus, LogOut, Menu, X, Upload,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ const NAV = [
   { to: "/vin", label: "Entrée Vin", icon: Wine },
   { to: "/stock", label: "Stock", icon: Beef },
   { to: "/recherche", label: "Recherche / Inventaire", icon: Search },
+  { to: "/import", label: "Import CSV", icon: Upload },
   { to: "/corbeille", label: "Corbeille", icon: Trash2 },
 ] as const;
 
