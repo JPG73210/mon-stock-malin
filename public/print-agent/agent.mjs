@@ -83,7 +83,7 @@ async function pollOnce() {
     try {
       if (!j.pdf_base64) throw new Error("PDF absent");
       const buf = Buffer.from(j.pdf_base64, "base64");
-      await printPdf(buf, j.id);
+      await printPdf(buf, j.id, j.format);
       await supabase.from("print_jobs").update({
         status: "printed", printed_at: new Date().toISOString(), error: null,
       }).eq("id", j.id);
