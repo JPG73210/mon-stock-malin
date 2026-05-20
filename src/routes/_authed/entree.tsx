@@ -16,8 +16,8 @@ import { QrCode } from "@/components/QrCode";
 import { ManagedSelect } from "@/components/ManagedSelect";
 import { RecentEntries } from "@/components/RecentEntries";
 import { CameraScanner } from "@/components/CameraScanner";
-import { printLabelAirprint, enqueuePrintJob } from "@/lib/print";
-import { Camera, Printer, Save, X, Send } from "lucide-react";
+import { printLabelAirprint, enqueuePrintJob, downloadLabelPdf } from "@/lib/print";
+import { Camera, Printer, Save, X, Send, Download } from "lucide-react";
 
 export const Route = createFileRoute("/_authed/entree")({ component: EntreePage });
 
@@ -56,7 +56,7 @@ function EntreePage() {
   const [scanLegacy, setScanLegacy] = useState(false);
 
   const save = useMutation({
-    mutationFn: async (mode: "none" | "airprint" | "agent") => {
+    mutationFn: async (mode: "none" | "airprint" | "agent" | "download") => {
       if (!user) throw new Error("Non connecté");
       if (!f.produit) throw new Error("Le produit est obligatoire");
       const dateFull = `${f.date_creation}-01`;
@@ -97,6 +97,7 @@ function EntreePage() {
       toast.success(`Produit ${code} enregistré × ${f.quantite}`);
       if (mode === "airprint") await printLabel(code);
       if (mode === "agent") await sendToAgent(code);
+      if (mode === "download") await downloadPdf(code);
       setF(empty);
     },
     onError: (e: any) => toast.error(e.message ?? "Erreur"),
@@ -126,6 +127,20 @@ function EntreePage() {
       toast.success("Envoyé à l'agent d'impression");
     } catch (e: any) {
       toast.error(e.message ?? "Erreur file");
+    }
+  }
+
+  async function downloadPdf(code: string) {
+    const data = {
+      id: code, produit: f.produit, animal: f.animal, fruit: f.fruit,
+      bague: f.bague, date: f.date_creation,
+      poids: f.poids, unite: f.unite_poids,
+    };
+    try {
+      await downloadLabelPdf(f.etiquette_format, data, f.quantite);
+      toast.success("PDF téléchargé");
+    } catch (e: any) {
+      toast.error(e.message ?? "Erreur PDF");
     }
   }
 
@@ -224,6 +239,11 @@ function EntreePage() {
               disabled={save.isPending || f.etiquette_format === "Pas d'étiquettes"}
               title="Envoyer à la file d'impression de l'agent local">
               <Send className="mr-2 h-4 w-4" /> Enregistrer &amp; envoyer à l'agent
+            </Button>
+            <Button variant="outline" onClick={() => save.mutate("download")}
+              disabled={save.isPending || f.etiquette_format === "Pas d'étiquettes"}
+              title="Enregistrer puis télécharger le PDF de l'étiquette">
+              <Download className="mr-2 h-4 w-4" /> Enregistrer &amp; télécharger PDF
             </Button>
             <Button variant="ghost" onClick={() => setF(empty)}>Réinitialiser</Button>
           </div>
