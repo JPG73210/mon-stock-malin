@@ -12,11 +12,12 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { QrCode, qrDataUrl } from "@/components/QrCode";
+import { QrCode } from "@/components/QrCode";
 import { ManagedSelect } from "@/components/ManagedSelect";
 import { RecentEntries } from "@/components/RecentEntries";
 import { CameraScanner } from "@/components/CameraScanner";
-import { Camera, Printer, Save, X } from "lucide-react";
+import { printLabelAirprint, enqueuePrintJob } from "@/lib/print";
+import { Camera, Printer, Save, X, Send } from "lucide-react";
 
 export const Route = createFileRoute("/_authed/entree")({ component: EntreePage });
 
@@ -100,37 +101,30 @@ function EntreePage() {
   });
 
   async function printLabel(code: string) {
-    const payload = JSON.stringify({
+    const data = {
       id: code, produit: f.produit, animal: f.animal, fruit: f.fruit,
-      bague: f.bague, date: f.date_creation, poids: f.poids, unite: f.unite_poids,
-    });
-    const qr = await qrDataUrl(payload, 280);
-    const w = window.open("", "_blank", "width=420,height=620");
-    if (!w) return toast.error("Pop-up bloquée");
-    const fmt = f.etiquette_format;
-    const size = fmt === "23x23" ? { w: 23, h: 23 } : fmt === "17x54" ? { w: 54, h: 17 } : { w: 62, h: 30 };
-    w.document.write(`<!doctype html><html><head><title>${code}</title>
-<style>
-@page { size: ${size.w}mm ${size.h}mm; margin: 0; }
-body { margin: 0; font-family: system-ui, sans-serif; }
-.lbl { width: ${size.w}mm; height: ${size.h}mm; display:flex; gap:2mm; padding:1mm; box-sizing:border-box; align-items:center; page-break-after: always; }
-.qr { height: 100%; aspect-ratio:1; }
-.info { font-size: 2.4mm; line-height:1.15; }
-.info b { font-size:3mm; }
-</style></head><body>
-${Array.from({ length: f.quantite }).map(() => `
-<div class="lbl">
-  <img class="qr" src="${qr}" />
-  <div class="info">
-    <div><b>${code}</b></div>
-    <div>${[f.produit, f.animal, f.fruit].filter(Boolean).join(" / ")}</div>
-    <div>${[f.poids ? f.poids + " " + f.unite_poids : "", f.bague ? "Bague " + f.bague : ""].filter(Boolean).join(" · ")}</div>
-    <div>${f.date_creation}</div>
-  </div>
-</div>`).join("")}
-<script>window.onload=()=>{window.print();}</script>
-</body></html>`);
-    w.document.close();
+      bague: f.bague, date: f.date_creation,
+      poids: f.poids, unite: f.unite_poids,
+    };
+    try {
+      await printLabelAirprint(f.etiquette_format, data, f.quantite);
+    } catch (e: any) {
+      toast.error(e.message ?? "Erreur PDF");
+    }
+  }
+
+  async function sendToAgent(code: string) {
+    const data = {
+      id: code, produit: f.produit, animal: f.animal, fruit: f.fruit,
+      bague: f.bague, date: f.date_creation,
+      poids: f.poids, unite: f.unite_poids,
+    };
+    try {
+      await enqueuePrintJob(f.etiquette_format, data, f.quantite);
+      toast.success("Envoyé à l'agent d'impression");
+    } catch (e: any) {
+      toast.error(e.message ?? "Erreur file");
+    }
   }
 
   return (
@@ -222,7 +216,13 @@ ${Array.from({ length: f.quantite }).map(() => `
             </Button>
             <Button variant="secondary" onClick={() => save.mutate(true)}
               disabled={save.isPending || f.etiquette_format === "Pas d'étiquettes"}>
-              <Printer className="mr-2 h-4 w-4" /> Enregistrer &amp; Imprimer
+              <Printer className="mr-2 h-4 w-4" /> Enregistrer &amp; AirPrint
+            </Button>
+            <Button variant="outline" onClick={async () => {
+              await save.mutateAsync(false);
+            }} disabled={save.isPending || f.etiquette_format === "Pas d'étiquettes"}
+              title="Envoyer à l'agent local après enregistrement (utiliser le bouton ci-dessous une fois enregistré)">
+              <Send className="mr-2 h-4 w-4" /> Enregistrer
             </Button>
             <Button variant="ghost" onClick={() => setF(empty)}>Réinitialiser</Button>
           </div>
