@@ -149,6 +149,30 @@ export type Database = {
         }
         Relationships: []
       }
+      user_options: {
+        Row: {
+          created_at: string
+          field: string
+          id: string
+          user_id: string
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          field: string
+          id?: string
+          user_id: string
+          value: string
+        }
+        Update: {
+          created_at?: string
+          field?: string
+          id?: string
+          user_id?: string
+          value?: string
+        }
+        Relationships: []
+      }
       wines: {
         Row: {
           chateau: string | null
