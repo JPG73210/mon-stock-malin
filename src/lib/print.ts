@@ -77,21 +77,37 @@ export async function generateLabelPdf(
   for (let i = 0; i < quantite; i++) {
     if (i > 0) doc.addPage([w, h], w > h ? "landscape" : "portrait");
     const pad = 1;
-    const qrSize = h - pad * 2;
-    doc.addImage(qr, "PNG", pad, pad, qrSize, qrSize);
-    const tx = qrSize + pad * 2;
-    const tw = w - tx - pad;
-    let y = pad + 2.6;
+    const portrait = h > w * 1.4; // tall labels → QR en haut, texte en bas
+    const square   = Math.abs(w - h) < 2; // labels carrés → QR seul
+
+    // QR : toujours carré, jamais distordu.
+    const qrMax = portrait
+      ? Math.min(w - pad * 2, h * 0.6)
+      : Math.min(w * 0.5, h - pad * 2);
+    const qrSize = square ? Math.min(w, h) - pad * 2 : qrMax;
+    const qx = portrait ? (w - qrSize) / 2 : pad;
+    const qy = pad;
+    doc.addImage(qr, "PNG", qx, qy, qrSize, qrSize);
+
+    if (square) continue; // 23×23 : QR seul, aucun texte (illisible sinon).
+
+    // Zone texte
+    const tx = portrait ? pad : qrSize + pad * 2;
+    const ty = portrait ? qy + qrSize + pad + 2.6 : pad + 2.6;
+    const tw = portrait ? w - pad * 2 : w - tx - pad;
+    let y = ty;
+
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
+    doc.setFontSize(portrait ? 11 : 8);
     doc.text(data.id, tx, y, { maxWidth: tw });
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(6);
-    y += 2.6;
+    doc.setFontSize(portrait ? 8 : 6);
+    const lh = portrait ? 3.6 : 2.4;
+    y += portrait ? 4 : 2.6;
     const l1 = [data.produit, data.animal, data.fruit].filter(Boolean).join(" / ");
-    if (l1) { doc.text(l1, tx, y, { maxWidth: tw }); y += 2.4; }
+    if (l1) { doc.text(l1, tx, y, { maxWidth: tw }); y += lh; }
     const l2 = [data.poids ? `${data.poids} ${data.unite ?? ""}`.trim() : "", data.bague ? `Bague ${data.bague}` : ""].filter(Boolean).join(" · ");
-    if (l2) { doc.text(l2, tx, y, { maxWidth: tw }); y += 2.4; }
+    if (l2) { doc.text(l2, tx, y, { maxWidth: tw }); y += lh; }
     if (data.date) doc.text(String(data.date), tx, y, { maxWidth: tw });
   }
   const ab = doc.output("arraybuffer");
