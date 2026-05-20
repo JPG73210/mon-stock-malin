@@ -14,32 +14,23 @@ import {
 import { toast } from "sonner";
 import { Camera, Save, Upload, X, Heart } from "lucide-react";
 import { CameraScanner } from "@/components/CameraScanner";
-import { EMPLACEMENTS, TYPES_VIN, COULEURS_VIN } from "@/lib/constants";
+import { ManagedSelect } from "@/components/ManagedSelect";
+import { RecentEntries } from "@/components/RecentEntries";
 
 export const Route = createFileRoute("/_authed/vin")({ component: VinPage });
 
 type Form = {
-  type_vin: string;
-  chateau: string;
-  millesime: string;
-  couleur: string;
-  code_barre: string;
-  emplacement: string;
-  quantite: number;
-  favori: boolean;
-  notes: string;
+  type_vin: string; chateau: string; millesime: string; couleur: string;
+  code_barre: string; emplacement: string; quantite: number;
+  favori: boolean; notes: string;
 };
 
 const empty: Form = {
-  type_vin: "Bordeaux",
-  chateau: "",
+  type_vin: "Bordeaux", chateau: "",
   millesime: String(new Date().getFullYear()),
-  couleur: "Rouge",
-  code_barre: "",
+  couleur: "Rouge", code_barre: "",
   emplacement: "Cave à Vin JP",
-  quantite: 1,
-  favori: false,
-  notes: "",
+  quantite: 1, favori: false, notes: "",
 };
 
 function VinPage() {
@@ -67,61 +58,47 @@ function VinPage() {
         photo_url = path;
       }
       const { error } = await supabase.from("wines").insert({
-        user_id: user.id,
-        photo_url,
-        type_vin: f.type_vin,
-        chateau: f.chateau || null,
+        user_id: user.id, photo_url,
+        type_vin: f.type_vin, chateau: f.chateau || null,
         millesime: f.millesime ? Number(f.millesime) : null,
-        couleur: f.couleur,
-        code_barre: f.code_barre || null,
-        emplacement: f.emplacement,
-        quantite: f.quantite,
-        favori: f.favori,
-        notes: f.notes || null,
+        couleur: f.couleur, code_barre: f.code_barre || null,
+        emplacement: f.emplacement, quantite: f.quantite,
+        favori: f.favori, notes: f.notes || null,
       });
       if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["wines"] });
+      qc.invalidateQueries({ queryKey: ["recent-wines"] });
       qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
       toast.success(`Vin ajouté × ${f.quantite}`);
-      setF(empty);
-      handleFile(null);
+      setF(empty); handleFile(null);
     },
     onError: (e: any) => toast.error(e.message ?? "Erreur"),
   });
 
   return (
-    <div className="p-6 md:p-8 max-w-4xl">
+    <div className="p-6 md:p-8 max-w-5xl">
       <h1 className="text-3xl font-bold mb-2">Entrée — Vin</h1>
-      <p className="text-muted-foreground mb-6">Pas d'identifiant ni d'étiquette pour les vins.</p>
+      <p className="text-muted-foreground mb-6">Code-barres EAN supporté (douchette ou caméra).</p>
 
       <div className="grid md:grid-cols-3 gap-6">
         <div className="md:col-span-2 rounded-xl border bg-card p-6 space-y-4">
           <div className="grid sm:grid-cols-2 gap-4">
             <Field label="Type de vin">
-              <Select value={f.type_vin} onValueChange={(v) => setF({ ...f, type_vin: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{TYPES_VIN.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
-              </Select>
+              <ManagedSelect field="type_vin" value={f.type_vin} onChange={(v) => setF({ ...f, type_vin: v })} />
             </Field>
             <Field label="Château / Domaine">
-              <Input value={f.chateau} onChange={(e) => setF({ ...f, chateau: e.target.value })} />
+              <ManagedSelect field="chateau" value={f.chateau} onChange={(v) => setF({ ...f, chateau: v })} placeholder="Choisir ou ajouter…" />
             </Field>
             <Field label="Millésime">
-              <Input type="number" min="1900" max="2100" value={f.millesime} onChange={(e) => setF({ ...f, millesime: e.target.value })} />
+              <ManagedSelect field="millesime" value={f.millesime} onChange={(v) => setF({ ...f, millesime: v })} />
             </Field>
             <Field label="Couleur">
-              <Select value={f.couleur} onValueChange={(v) => setF({ ...f, couleur: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{COULEURS_VIN.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-              </Select>
+              <ManagedSelect field="couleur_vin" value={f.couleur} onChange={(v) => setF({ ...f, couleur: v })} />
             </Field>
             <Field label="Emplacement">
-              <Select value={f.emplacement} onValueChange={(v) => setF({ ...f, emplacement: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{EMPLACEMENTS.map((e) => <SelectItem key={e} value={e}>{e}</SelectItem>)}</SelectContent>
-              </Select>
+              <ManagedSelect field="emplacement" value={f.emplacement} onChange={(v) => setF({ ...f, emplacement: v })} />
             </Field>
             <Field label="Quantité">
               <Select value={String(f.quantite)} onValueChange={(v) => setF({ ...f, quantite: Number(v) })}>
@@ -132,7 +109,7 @@ function VinPage() {
                 </SelectContent>
               </Select>
             </Field>
-            <Field label="Code-barres">
+            <Field label="Code-barres EAN">
               <div className="flex gap-2">
                 <Input value={f.code_barre} onChange={(e) => setF({ ...f, code_barre: e.target.value })} placeholder="Scanner ou saisir" />
                 <Button type="button" variant="outline" size="icon" onClick={() => setScanning(!scanning)}>
@@ -148,7 +125,7 @@ function VinPage() {
 
           {scanning && (
             <CameraScanner
-              onScan={(t) => { setF((p) => ({ ...p, code_barre: t })); setScanning(false); toast.success("Code-barres lu : " + t); }}
+              onScan={(t) => { setF((p) => ({ ...p, code_barre: t })); setScanning(false); toast.success("Code lu : " + t); }}
               onClose={() => setScanning(false)}
             />
           )}
@@ -174,19 +151,15 @@ function VinPage() {
               Aucune photo
             </div>
           )}
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            className="hidden"
-            onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
-          />
+          <input ref={fileRef} type="file" accept="image/*" capture="environment" className="hidden"
+            onChange={(e) => handleFile(e.target.files?.[0] ?? null)} />
           <Button variant="outline" className="w-full" onClick={() => fileRef.current?.click()}>
             <Upload className="mr-2 h-4 w-4" /> {photoFile ? "Remplacer" : "Prendre / Importer"}
           </Button>
         </div>
       </div>
+
+      <RecentEntries kind="wine" />
     </div>
   );
 }

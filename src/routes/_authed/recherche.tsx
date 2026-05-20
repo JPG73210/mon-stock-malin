@@ -6,8 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Camera, X, Minus, Plus, Trash2 } from "lucide-react";
+import { Camera, X, Minus, Plus, Trash2, Pencil } from "lucide-react";
 import { CameraScanner } from "@/components/CameraScanner";
+import { ProductEditDialog } from "@/components/ProductEditDialog";
+import { WineEditDialog } from "@/components/WineEditDialog";
 
 export const Route = createFileRoute("/_authed/recherche")({ component: RecherchePage });
 
@@ -25,7 +27,9 @@ function RecherchePage() {
   const [input, setInput] = useState("");
   const [scanning, setScanning] = useState(false);
   const [hits, setHits] = useState<Hit[]>([]);
-  const [mode, setMode] = useState<"in" | "out">("out");
+  const [mode, setMode] = useState<"in" | "out" | "details">("out");
+  const [editProduct, setEditProduct] = useState<any | null>(null);
+  const [editWine, setEditWine] = useState<any | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { inputRef.current?.focus(); }, []);
@@ -41,12 +45,14 @@ function RecherchePage() {
     // search products by code
     const { data: prod } = await supabase.from("products").select("*").eq("code", code).is("deleted_at", null).maybeSingle();
     if (prod) {
+      if (mode === "details") { setEditProduct(prod); return; }
       addHit({ id: prod.id, kind: "product", label: prod.produit, sub: `${prod.code} · ${prod.emplacement}`, raw: prod });
       return;
     }
     // search wine by barcode
     const { data: wine } = await supabase.from("wines").select("*").eq("code_barre", text.trim()).is("deleted_at", null).maybeSingle();
     if (wine) {
+      if (mode === "details") { setEditWine(wine); return; }
       addHit({ id: wine.id, kind: "wine", label: wine.chateau ?? "Vin", sub: `${wine.type_vin} ${wine.millesime ?? ""}`.trim(), raw: wine });
       return;
     }
@@ -107,9 +113,12 @@ function RecherchePage() {
       </div>
 
       <div className="rounded-xl border bg-card p-4 space-y-3">
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button variant={mode === "out" ? "default" : "outline"} onClick={() => setMode("out")}>− Sortie</Button>
           <Button variant={mode === "in" ? "default" : "outline"} onClick={() => setMode("in")}>+ Entrée</Button>
+          <Button variant={mode === "details" ? "default" : "outline"} onClick={() => setMode("details")}>
+            <Pencil className="mr-1 h-4 w-4" /> Détails / Modifier
+          </Button>
         </div>
         <form onSubmit={submit} className="flex gap-2">
           <Input
@@ -157,6 +166,9 @@ function RecherchePage() {
           ))}
         </div>
       </div>
+
+      <ProductEditDialog product={editProduct} open={!!editProduct} onClose={() => setEditProduct(null)} />
+      <WineEditDialog wine={editWine} open={!!editWine} onClose={() => setEditWine(null)} />
     </div>
   );
 }

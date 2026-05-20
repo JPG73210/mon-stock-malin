@@ -7,14 +7,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { QrCode, qrDataUrl } from "@/components/QrCode";
-import { EMPLACEMENTS, VERSIONS, UNITES_POIDS, ETIQUETTE_FORMATS } from "@/lib/constants";
-import { Printer, Save } from "lucide-react";
+import { ManagedSelect } from "@/components/ManagedSelect";
+import { RecentEntries } from "@/components/RecentEntries";
+import { CameraScanner } from "@/components/CameraScanner";
+import { Camera, Printer, Save, X } from "lucide-react";
 
 export const Route = createFileRoute("/_authed/entree")({ component: EntreePage });
 
@@ -32,66 +34,63 @@ type Form = {
   etiquette_format: string;
   needs_label: boolean;
   notes: string;
+  legacy_code: string;
+  use_legacy: boolean;
 };
 
 const empty: Form = {
-  emplacement: EMPLACEMENTS[0],
+  emplacement: "Congélateur à Tiroir Garage",
   date_creation: new Date().toISOString().slice(0, 7),
-  version: "V1",
-  bague: "",
-  produit: "",
-  animal: "",
-  fruit: "",
-  quantite: 1,
-  poids: "",
-  unite_poids: "Gr",
+  version: "V1", bague: "", produit: "", animal: "", fruit: "",
+  quantite: 1, poids: "", unite_poids: "Gr",
   etiquette_format: "Pas d'étiquettes",
-  needs_label: false,
-  notes: "",
+  needs_label: false, notes: "",
+  legacy_code: "", use_legacy: false,
 };
 
 function EntreePage() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [f, setF] = useState<Form>(empty);
+  const [scanLegacy, setScanLegacy] = useState(false);
 
   const save = useMutation({
     mutationFn: async (printAfter: boolean) => {
       if (!user) throw new Error("Non connecté");
       if (!f.produit) throw new Error("Le produit est obligatoire");
       const dateFull = `${f.date_creation}-01`;
-      const { data: codeData, error: codeErr } = await supabase.rpc("generate_product_code", {
-        _user_id: user.id,
-        _date: dateFull,
-        _produit: f.produit,
-        _animal: f.animal,
-        _fruit: f.fruit,
-      });
-      if (codeErr) throw codeErr;
-      const code = codeData as string;
+      let code: string;
+      if (f.use_legacy) {
+        if (!f.legacy_code.trim()) throw new Error("Code existant requis");
+        code = f.legacy_code.trim();
+      } else {
+        const { data: codeData, error: codeErr } = await supabase.rpc("generate_product_code", {
+          _user_id: user.id, _date: dateFull,
+          _produit: f.produit, _animal: f.animal, _fruit: f.fruit,
+        });
+        if (codeErr) throw codeErr;
+        code = codeData as string;
+      }
       const needsLabel = f.etiquette_format !== "Pas d'étiquettes";
       const { error } = await supabase.from("products").insert({
-        user_id: user.id,
-        code,
-        emplacement: f.emplacement,
-        date_creation: dateFull,
-        version: f.version,
-        bague: f.bague || null,
-        produit: f.produit,
-        animal: f.animal || null,
-        fruit: f.fruit || null,
+        user_id: user.id, code,
+        emplacement: f.emplacement, date_creation: dateFull,
+        version: f.version, bague: f.bague || null,
+        produit: f.produit, animal: f.animal || null, fruit: f.fruit || null,
         quantite: f.quantite,
-        poids: f.poids ? Number(f.poids) : null,
-        unite_poids: f.unite_poids,
-        etiquette_format: f.etiquette_format,
-        needs_label: needsLabel,
+        poids: f.poids ? Number(f.poids) : null, unite_poids: f.unite_poids,
+        etiquette_format: f.etiquette_format, needs_label: needsLabel,
         notes: f.notes || null,
       });
-      if (error) throw error;
+      if (error) {
+        if (String(error.message).includes("duplicate")) throw new Error("Ce code existe déjà");
+        throw error;
+      }
       return { code, printAfter };
     },
     onSuccess: async ({ code, printAfter }) => {
       qc.invalidateQueries({ queryKey: ["products"] });
+      qc.invalidateQueries({ queryKey: ["recent-products"] });
       qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
       toast.success(`Produit ${code} enregistré × ${f.quantite}`);
       setF(empty);
@@ -114,11 +113,10 @@ function EntreePage() {
 <style>
 @page { size: ${size.w}mm ${size.h}mm; margin: 0; }
 body { margin: 0; font-family: system-ui, sans-serif; }
-.lbl { width: ${size.w}mm; height: ${size.h}mm; display:flex; gap:2mm; padding:1mm; box-sizing:border-box; align-items:center; }
+.lbl { width: ${size.w}mm; height: ${size.h}mm; display:flex; gap:2mm; padding:1mm; box-sizing:border-box; align-items:center; page-break-after: always; }
 .qr { height: 100%; aspect-ratio:1; }
 .info { font-size: 2.4mm; line-height:1.15; }
 .info b { font-size:3mm; }
-${Array.from({ length: f.quantite }).map(() => "").join("")}
 </style></head><body>
 ${Array.from({ length: f.quantite }).map(() => `
 <div class="lbl">
@@ -136,39 +134,61 @@ ${Array.from({ length: f.quantite }).map(() => `
   }
 
   return (
-    <div className="p-6 md:p-8 max-w-4xl">
+    <div className="p-6 md:p-8 max-w-5xl">
       <h1 className="text-3xl font-bold mb-2">Entrée — Viande / Légumes</h1>
-      <p className="text-muted-foreground mb-6">Un identifiant unique est généré automatiquement.</p>
+      <p className="text-muted-foreground mb-6">Un identifiant unique est généré, sauf si vous saisissez un code existant.</p>
 
       <div className="grid md:grid-cols-3 gap-6">
         <div className="md:col-span-2 space-y-4 rounded-xl border bg-card p-6">
+          <div className="flex items-center gap-3 p-3 rounded-md bg-muted/50">
+            <Switch checked={f.use_legacy} onCheckedChange={(v) => setF({ ...f, use_legacy: v })} />
+            <Label className="text-sm">J'ai déjà un QR code / une étiquette existante</Label>
+          </div>
+          {f.use_legacy && (
+            <div className="space-y-2">
+              <Label className="text-xs">Code existant</Label>
+              <div className="flex gap-2">
+                <Input value={f.legacy_code} onChange={(e) => setF({ ...f, legacy_code: e.target.value })}
+                  placeholder="Scanner ou saisir l'ID de l'étiquette" />
+                <Button type="button" variant="outline" size="icon" onClick={() => setScanLegacy(!scanLegacy)}>
+                  {scanLegacy ? <X className="h-4 w-4" /> : <Camera className="h-4 w-4" />}
+                </Button>
+              </div>
+              {scanLegacy && (
+                <CameraScanner
+                  onScan={(t) => {
+                    let v = t;
+                    try { const p = JSON.parse(t); if (p.id) v = p.id; } catch {}
+                    setF((p) => ({ ...p, legacy_code: v })); setScanLegacy(false);
+                    toast.success("Code lu : " + v);
+                  }}
+                  onClose={() => setScanLegacy(false)}
+                />
+              )}
+            </div>
+          )}
+
           <div className="grid sm:grid-cols-2 gap-4">
             <Field label="Emplacement">
-              <Select value={f.emplacement} onValueChange={(v) => setF({ ...f, emplacement: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{EMPLACEMENTS.map((e) => <SelectItem key={e} value={e}>{e}</SelectItem>)}</SelectContent>
-              </Select>
+              <ManagedSelect field="emplacement" value={f.emplacement} onChange={(v) => setF({ ...f, emplacement: v })} />
             </Field>
             <Field label="Date (mm/aaaa)">
               <Input type="month" value={f.date_creation} onChange={(e) => setF({ ...f, date_creation: e.target.value })} />
             </Field>
             <Field label="Version">
-              <Select value={f.version} onValueChange={(v) => setF({ ...f, version: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{VERSIONS.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}</SelectContent>
-              </Select>
+              <ManagedSelect field="version" value={f.version} onChange={(v) => setF({ ...f, version: v })} />
             </Field>
             <Field label="N° Bague / Marque">
               <Input value={f.bague} onChange={(e) => setF({ ...f, bague: e.target.value })} placeholder="ex: FR123456" />
             </Field>
             <Field label="Produit *">
-              <Input value={f.produit} onChange={(e) => setF({ ...f, produit: e.target.value })} placeholder="Steak, Filet, Tomate…" />
+              <ManagedSelect field="produit" value={f.produit} onChange={(v) => setF({ ...f, produit: v })} placeholder="Steak, Filet, Tomate…" />
             </Field>
             <Field label="Animal">
-              <Input value={f.animal} onChange={(e) => setF({ ...f, animal: e.target.value })} placeholder="Bœuf, Veau, Poulet…" />
+              <ManagedSelect field="animal" value={f.animal} onChange={(v) => setF({ ...f, animal: v })} placeholder="Bœuf, Veau…" />
             </Field>
             <Field label="Fruit / Légume">
-              <Input value={f.fruit} onChange={(e) => setF({ ...f, fruit: e.target.value })} placeholder="Tomate, Pomme…" />
+              <ManagedSelect field="fruit" value={f.fruit} onChange={(v) => setF({ ...f, fruit: v })} placeholder="Tomate, Pomme…" />
             </Field>
             <Field label="Quantité (étiquettes)">
               <Select value={String(f.quantite)} onValueChange={(v) => setF({ ...f, quantite: Number(v) })}>
@@ -183,16 +203,10 @@ ${Array.from({ length: f.quantite }).map(() => `
               <Input type="number" step="0.01" value={f.poids} onChange={(e) => setF({ ...f, poids: e.target.value })} />
             </Field>
             <Field label="Unité">
-              <Select value={f.unite_poids} onValueChange={(v) => setF({ ...f, unite_poids: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{UNITES_POIDS.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
-              </Select>
+              <ManagedSelect field="unite_poids" value={f.unite_poids} onChange={(v) => setF({ ...f, unite_poids: v })} />
             </Field>
             <Field label="Format d'étiquette">
-              <Select value={f.etiquette_format} onValueChange={(v) => setF({ ...f, etiquette_format: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{ETIQUETTE_FORMATS.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
-              </Select>
+              <ManagedSelect field="etiquette_format" value={f.etiquette_format} onChange={(v) => setF({ ...f, etiquette_format: v })} />
             </Field>
             <div className="flex items-center gap-3 pt-6">
               <Switch checked={f.needs_label} onCheckedChange={(v) => setF({ ...f, needs_label: v })} />
@@ -206,11 +220,8 @@ ${Array.from({ length: f.quantite }).map(() => `
             <Button onClick={() => save.mutate(false)} disabled={save.isPending}>
               <Save className="mr-2 h-4 w-4" /> Enregistrer
             </Button>
-            <Button
-              variant="secondary"
-              onClick={() => save.mutate(true)}
-              disabled={save.isPending || f.etiquette_format === "Pas d'étiquettes"}
-            >
+            <Button variant="secondary" onClick={() => save.mutate(true)}
+              disabled={save.isPending || f.etiquette_format === "Pas d'étiquettes"}>
               <Printer className="mr-2 h-4 w-4" /> Enregistrer &amp; Imprimer
             </Button>
             <Button variant="ghost" onClick={() => setF(empty)}>Réinitialiser</Button>
@@ -219,19 +230,18 @@ ${Array.from({ length: f.quantite }).map(() => `
 
         <div className="rounded-xl border bg-card p-6 space-y-3">
           <p className="text-sm font-medium">Aperçu QR code</p>
-          <QrCode
-            value={JSON.stringify({
-              produit: f.produit, animal: f.animal, fruit: f.fruit,
-              bague: f.bague, date: f.date_creation,
-              poids: f.poids, unite: f.unite_poids,
-            })}
-            size={160}
-          />
+          <QrCode value={JSON.stringify({
+            produit: f.produit, animal: f.animal, fruit: f.fruit,
+            bague: f.bague, date: f.date_creation,
+            poids: f.poids, unite: f.unite_poids,
+          })} size={160} />
           <p className="text-xs text-muted-foreground">
-            L'ID définitif sera attribué à l'enregistrement.
+            {f.use_legacy ? "L'ID utilisé sera le code existant scanné." : "L'ID définitif sera attribué à l'enregistrement."}
           </p>
         </div>
       </div>
+
+      <RecentEntries kind="product" />
     </div>
   );
 }

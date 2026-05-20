@@ -15,6 +15,7 @@ import { Route as AuthedIndexRouteImport } from './routes/_authed/index'
 import { Route as AuthedVinRouteImport } from './routes/_authed/vin'
 import { Route as AuthedStockRouteImport } from './routes/_authed/stock'
 import { Route as AuthedRechercheRouteImport } from './routes/_authed/recherche'
+import { Route as AuthedImportRouteImport } from './routes/_authed/import'
 import { Route as AuthedEntreeRouteImport } from './routes/_authed/entree'
 import { Route as AuthedCorbeilleRouteImport } from './routes/_authed/corbeille'
 
@@ -47,6 +48,11 @@ const AuthedRechercheRoute = AuthedRechercheRouteImport.update({
   path: '/recherche',
   getParentRoute: () => AuthedRoute,
 } as any)
+const AuthedImportRoute = AuthedImportRouteImport.update({
+  id: '/import',
+  path: '/import',
+  getParentRoute: () => AuthedRoute,
+} as any)
 const AuthedEntreeRoute = AuthedEntreeRouteImport.update({
   id: '/entree',
   path: '/entree',
@@ -63,6 +69,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/corbeille': typeof AuthedCorbeilleRoute
   '/entree': typeof AuthedEntreeRoute
+  '/import': typeof AuthedImportRoute
   '/recherche': typeof AuthedRechercheRoute
   '/stock': typeof AuthedStockRoute
   '/vin': typeof AuthedVinRoute
@@ -71,6 +78,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/corbeille': typeof AuthedCorbeilleRoute
   '/entree': typeof AuthedEntreeRoute
+  '/import': typeof AuthedImportRoute
   '/recherche': typeof AuthedRechercheRoute
   '/stock': typeof AuthedStockRoute
   '/vin': typeof AuthedVinRoute
@@ -82,6 +90,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authed/corbeille': typeof AuthedCorbeilleRoute
   '/_authed/entree': typeof AuthedEntreeRoute
+  '/_authed/import': typeof AuthedImportRoute
   '/_authed/recherche': typeof AuthedRechercheRoute
   '/_authed/stock': typeof AuthedStockRoute
   '/_authed/vin': typeof AuthedVinRoute
@@ -94,6 +103,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/corbeille'
     | '/entree'
+    | '/import'
     | '/recherche'
     | '/stock'
     | '/vin'
@@ -102,6 +112,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/corbeille'
     | '/entree'
+    | '/import'
     | '/recherche'
     | '/stock'
     | '/vin'
@@ -112,6 +123,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authed/corbeille'
     | '/_authed/entree'
+    | '/_authed/import'
     | '/_authed/recherche'
     | '/_authed/stock'
     | '/_authed/vin'
@@ -167,6 +179,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedRechercheRouteImport
       parentRoute: typeof AuthedRoute
     }
+    '/_authed/import': {
+      id: '/_authed/import'
+      path: '/import'
+      fullPath: '/import'
+      preLoaderRoute: typeof AuthedImportRouteImport
+      parentRoute: typeof AuthedRoute
+    }
     '/_authed/entree': {
       id: '/_authed/entree'
       path: '/entree'
@@ -187,6 +206,7 @@ declare module '@tanstack/react-router' {
 interface AuthedRouteChildren {
   AuthedCorbeilleRoute: typeof AuthedCorbeilleRoute
   AuthedEntreeRoute: typeof AuthedEntreeRoute
+  AuthedImportRoute: typeof AuthedImportRoute
   AuthedRechercheRoute: typeof AuthedRechercheRoute
   AuthedStockRoute: typeof AuthedStockRoute
   AuthedVinRoute: typeof AuthedVinRoute
@@ -196,6 +216,7 @@ interface AuthedRouteChildren {
 const AuthedRouteChildren: AuthedRouteChildren = {
   AuthedCorbeilleRoute: AuthedCorbeilleRoute,
   AuthedEntreeRoute: AuthedEntreeRoute,
+  AuthedImportRoute: AuthedImportRoute,
   AuthedRechercheRoute: AuthedRechercheRoute,
   AuthedStockRoute: AuthedStockRoute,
   AuthedVinRoute: AuthedVinRoute,
@@ -212,13 +233,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
