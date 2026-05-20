@@ -240,6 +240,11 @@ function EntreePage() {
               title="Envoyer à la file d'impression de l'agent local">
               <Send className="mr-2 h-4 w-4" /> Enregistrer &amp; envoyer à l'agent
             </Button>
+            <Button variant="outline" onClick={() => save.mutate("download")}
+              disabled={save.isPending || f.etiquette_format === "Pas d'étiquettes"}
+              title="Enregistrer puis télécharger le PDF de l'étiquette">
+              <Download className="mr-2 h-4 w-4" /> Enregistrer &amp; télécharger PDF
+            </Button>
             <Button variant="ghost" onClick={() => setF(empty)}>Réinitialiser</Button>
           </div>
         </div>
