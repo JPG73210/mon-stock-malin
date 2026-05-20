@@ -56,7 +56,7 @@ function EntreePage() {
   const [scanLegacy, setScanLegacy] = useState(false);
 
   const save = useMutation({
-    mutationFn: async (mode: "none" | "airprint" | "agent") => {
+    mutationFn: async (mode: "none" | "airprint" | "agent" | "download") => {
       if (!user) throw new Error("Non connecté");
       if (!f.produit) throw new Error("Le produit est obligatoire");
       const dateFull = `${f.date_creation}-01`;
