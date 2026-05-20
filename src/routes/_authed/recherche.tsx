@@ -6,8 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Camera, X, Minus, Plus, Trash2 } from "lucide-react";
+import { Camera, X, Minus, Plus, Trash2, Pencil } from "lucide-react";
 import { CameraScanner } from "@/components/CameraScanner";
+import { ProductEditDialog } from "@/components/ProductEditDialog";
+import { WineEditDialog } from "@/components/WineEditDialog";
 
 export const Route = createFileRoute("/_authed/recherche")({ component: RecherchePage });
 
@@ -25,7 +27,9 @@ function RecherchePage() {
   const [input, setInput] = useState("");
   const [scanning, setScanning] = useState(false);
   const [hits, setHits] = useState<Hit[]>([]);
-  const [mode, setMode] = useState<"in" | "out">("out");
+  const [mode, setMode] = useState<"in" | "out" | "details">("out");
+  const [editProduct, setEditProduct] = useState<any | null>(null);
+  const [editWine, setEditWine] = useState<any | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { inputRef.current?.focus(); }, []);
