@@ -49,7 +49,12 @@ function ImpressionPage() {
     for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
     const blob = new Blob([bytes], { type: "application/pdf" });
     const url = URL.createObjectURL(blob);
-    window.open(url, "_blank");
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `etiquette-${(j.label_data as any)?.id ?? j.id}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 60_000);
   }
 
