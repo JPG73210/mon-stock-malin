@@ -130,6 +130,20 @@ function EntreePage() {
     }
   }
 
+  async function downloadPdf(code: string) {
+    const data = {
+      id: code, produit: f.produit, animal: f.animal, fruit: f.fruit,
+      bague: f.bague, date: f.date_creation,
+      poids: f.poids, unite: f.unite_poids,
+    };
+    try {
+      await downloadLabelPdf(f.etiquette_format, data, f.quantite);
+      toast.success("PDF téléchargé");
+    } catch (e: any) {
+      toast.error(e.message ?? "Erreur PDF");
+    }
+  }
+
   return (
     <div className="p-6 md:p-8 max-w-5xl">
       <h1 className="text-3xl font-bold mb-2">Entrée — Viande / Légumes</h1>
