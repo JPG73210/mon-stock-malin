@@ -16,8 +16,8 @@ import { QrCode } from "@/components/QrCode";
 import { ManagedSelect } from "@/components/ManagedSelect";
 import { RecentEntries } from "@/components/RecentEntries";
 import { CameraScanner } from "@/components/CameraScanner";
-import { printLabelAirprint, enqueuePrintJob } from "@/lib/print";
-import { Camera, Printer, Save, X, Send } from "lucide-react";
+import { printLabelAirprint, enqueuePrintJob, downloadLabelPdf } from "@/lib/print";
+import { Camera, Printer, Save, X, Send, Download } from "lucide-react";
 
 export const Route = createFileRoute("/_authed/entree")({ component: EntreePage });
 
