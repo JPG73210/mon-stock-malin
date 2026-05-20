@@ -15,6 +15,7 @@ import {
 import { toast } from "sonner";
 import { Heart, Trash2, Search, Printer, Pencil } from "lucide-react";
 import { QrCode } from "@/components/QrCode";
+import { printLabelAirprint } from "@/lib/print";
 import { ProductEditDialog } from "@/components/ProductEditDialog";
 import { WineEditDialog } from "@/components/WineEditDialog";
 
