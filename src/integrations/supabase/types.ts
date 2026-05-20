@@ -41,6 +41,45 @@ export type Database = {
         }
         Relationships: []
       }
+      print_jobs: {
+        Row: {
+          created_at: string
+          error: string | null
+          format: string
+          id: string
+          label_data: Json
+          pdf_base64: string | null
+          printed_at: string | null
+          printer_name: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          format: string
+          id?: string
+          label_data: Json
+          pdf_base64?: string | null
+          printed_at?: string | null
+          printer_name?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          format?: string
+          id?: string
+          label_data?: Json
+          pdf_base64?: string | null
+          printed_at?: string | null
+          printer_name?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       product_counters: {
         Row: {
           last_num: number
@@ -79,6 +118,7 @@ export type Database = {
           poids: number | null
           produit: string
           quantite: number
+          template_id: string | null
           unite_poids: string | null
           updated_at: string
           user_id: string
@@ -100,6 +140,7 @@ export type Database = {
           poids?: number | null
           produit: string
           quantite?: number
+          template_id?: string | null
           unite_poids?: string | null
           updated_at?: string
           user_id: string
@@ -121,6 +162,7 @@ export type Database = {
           poids?: number | null
           produit?: string
           quantite?: number
+          template_id?: string | null
           unite_poids?: string | null
           updated_at?: string
           user_id?: string
@@ -187,6 +229,7 @@ export type Database = {
           notes: string | null
           photo_url: string | null
           quantite: number
+          template_id: string | null
           type_vin: string | null
           updated_at: string
           user_id: string
@@ -204,6 +247,7 @@ export type Database = {
           notes?: string | null
           photo_url?: string | null
           quantite?: number
+          template_id?: string | null
           type_vin?: string | null
           updated_at?: string
           user_id: string
@@ -221,6 +265,7 @@ export type Database = {
           notes?: string | null
           photo_url?: string | null
           quantite?: number
+          template_id?: string | null
           type_vin?: string | null
           updated_at?: string
           user_id?: string
