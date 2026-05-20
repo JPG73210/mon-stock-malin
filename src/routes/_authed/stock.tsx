@@ -186,7 +186,7 @@ function ProductsList() {
               </div>
               {selected.notes && <p className="text-sm text-muted-foreground border-t pt-3">{selected.notes}</p>}
               <DialogFooter>
-                <Button variant="outline" onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" /> Imprimer</Button>
+                <Button variant="outline" onClick={() => printLabelAirprint(selected.etiquette_format ?? "62", { id: selected.code, produit: selected.produit, animal: selected.animal, fruit: selected.fruit, bague: selected.bague, date: selected.date_creation, poids: selected.poids, unite: selected.unite_poids }, 1).catch(() => toast.error("Impression impossible"))}><Printer className="mr-2 h-4 w-4" /> Imprimer</Button>
                 <Button variant="secondary" onClick={() => { setEditing(selected); setSelected(null); }}>
                   <Pencil className="mr-2 h-4 w-4" /> Modifier
                 </Button>
