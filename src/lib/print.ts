@@ -63,7 +63,7 @@ export async function generateLabelPdf(
   return btoa(bin);
 }
 
-/** Ouvre le PDF dans un nouvel onglet → AirPrint via Partager. */
+/** Génère le PDF et déclenche la boîte d'impression du navigateur (AirPrint). */
 export async function printLabelAirprint(
   fmt: LabelFormat | string,
   data: LabelData,
@@ -72,7 +72,51 @@ export async function printLabelAirprint(
   const b64 = await generateLabelPdf(fmt, data, quantite);
   const blob = b64ToBlob(b64, "application/pdf");
   const url = URL.createObjectURL(blob);
-  window.open(url, "_blank");
+
+  // 1) Tente d'ouvrir dans un iframe caché pour appeler print() directement
+  //    (contourne le blocage des pop-ups sur iOS/Safari).
+  const iframe = document.createElement("iframe");
+  iframe.style.position = "fixed";
+  iframe.style.right = "0";
+  iframe.style.bottom = "0";
+  iframe.style.width = "0";
+  iframe.style.height = "0";
+  iframe.style.border = "0";
+  iframe.src = url;
+  document.body.appendChild(iframe);
+  iframe.onload = () => {
+    try {
+      iframe.contentWindow?.focus();
+      iframe.contentWindow?.print();
+    } catch {
+      // 2) Fallback : téléchargement explicite que l'utilisateur ouvre puis Partager → Imprimer.
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `etiquette-${data.id}.pdf`;
+      a.click();
+    }
+  };
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+    iframe.remove();
+  }, 120_000);
+}
+
+/** Téléchargement direct du PDF (utile si l'iframe est bloquée). */
+export async function downloadLabelPdf(
+  fmt: LabelFormat | string,
+  data: LabelData,
+  quantite = 1,
+) {
+  const b64 = await generateLabelPdf(fmt, data, quantite);
+  const blob = b64ToBlob(b64, "application/pdf");
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `etiquette-${data.id}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
