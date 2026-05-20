@@ -15,7 +15,9 @@ import { Route as AuthedIndexRouteImport } from './routes/_authed/index'
 import { Route as AuthedVinRouteImport } from './routes/_authed/vin'
 import { Route as AuthedStockRouteImport } from './routes/_authed/stock'
 import { Route as AuthedRechercheRouteImport } from './routes/_authed/recherche'
+import { Route as AuthedImpressionRouteImport } from './routes/_authed/impression'
 import { Route as AuthedImportRouteImport } from './routes/_authed/import'
+import { Route as AuthedEtiquettesRouteImport } from './routes/_authed/etiquettes'
 import { Route as AuthedEntreeRouteImport } from './routes/_authed/entree'
 import { Route as AuthedCorbeilleRouteImport } from './routes/_authed/corbeille'
 
@@ -48,9 +50,19 @@ const AuthedRechercheRoute = AuthedRechercheRouteImport.update({
   path: '/recherche',
   getParentRoute: () => AuthedRoute,
 } as any)
+const AuthedImpressionRoute = AuthedImpressionRouteImport.update({
+  id: '/impression',
+  path: '/impression',
+  getParentRoute: () => AuthedRoute,
+} as any)
 const AuthedImportRoute = AuthedImportRouteImport.update({
   id: '/import',
   path: '/import',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedEtiquettesRoute = AuthedEtiquettesRouteImport.update({
+  id: '/etiquettes',
+  path: '/etiquettes',
   getParentRoute: () => AuthedRoute,
 } as any)
 const AuthedEntreeRoute = AuthedEntreeRouteImport.update({
@@ -69,7 +81,9 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/corbeille': typeof AuthedCorbeilleRoute
   '/entree': typeof AuthedEntreeRoute
+  '/etiquettes': typeof AuthedEtiquettesRoute
   '/import': typeof AuthedImportRoute
+  '/impression': typeof AuthedImpressionRoute
   '/recherche': typeof AuthedRechercheRoute
   '/stock': typeof AuthedStockRoute
   '/vin': typeof AuthedVinRoute
@@ -78,7 +92,9 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/corbeille': typeof AuthedCorbeilleRoute
   '/entree': typeof AuthedEntreeRoute
+  '/etiquettes': typeof AuthedEtiquettesRoute
   '/import': typeof AuthedImportRoute
+  '/impression': typeof AuthedImpressionRoute
   '/recherche': typeof AuthedRechercheRoute
   '/stock': typeof AuthedStockRoute
   '/vin': typeof AuthedVinRoute
@@ -90,7 +106,9 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authed/corbeille': typeof AuthedCorbeilleRoute
   '/_authed/entree': typeof AuthedEntreeRoute
+  '/_authed/etiquettes': typeof AuthedEtiquettesRoute
   '/_authed/import': typeof AuthedImportRoute
+  '/_authed/impression': typeof AuthedImpressionRoute
   '/_authed/recherche': typeof AuthedRechercheRoute
   '/_authed/stock': typeof AuthedStockRoute
   '/_authed/vin': typeof AuthedVinRoute
@@ -103,7 +121,9 @@ export interface FileRouteTypes {
     | '/auth'
     | '/corbeille'
     | '/entree'
+    | '/etiquettes'
     | '/import'
+    | '/impression'
     | '/recherche'
     | '/stock'
     | '/vin'
@@ -112,7 +132,9 @@ export interface FileRouteTypes {
     | '/auth'
     | '/corbeille'
     | '/entree'
+    | '/etiquettes'
     | '/import'
+    | '/impression'
     | '/recherche'
     | '/stock'
     | '/vin'
@@ -123,7 +145,9 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authed/corbeille'
     | '/_authed/entree'
+    | '/_authed/etiquettes'
     | '/_authed/import'
+    | '/_authed/impression'
     | '/_authed/recherche'
     | '/_authed/stock'
     | '/_authed/vin'
@@ -179,11 +203,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedRechercheRouteImport
       parentRoute: typeof AuthedRoute
     }
+    '/_authed/impression': {
+      id: '/_authed/impression'
+      path: '/impression'
+      fullPath: '/impression'
+      preLoaderRoute: typeof AuthedImpressionRouteImport
+      parentRoute: typeof AuthedRoute
+    }
     '/_authed/import': {
       id: '/_authed/import'
       path: '/import'
       fullPath: '/import'
       preLoaderRoute: typeof AuthedImportRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/etiquettes': {
+      id: '/_authed/etiquettes'
+      path: '/etiquettes'
+      fullPath: '/etiquettes'
+      preLoaderRoute: typeof AuthedEtiquettesRouteImport
       parentRoute: typeof AuthedRoute
     }
     '/_authed/entree': {
@@ -206,7 +244,9 @@ declare module '@tanstack/react-router' {
 interface AuthedRouteChildren {
   AuthedCorbeilleRoute: typeof AuthedCorbeilleRoute
   AuthedEntreeRoute: typeof AuthedEntreeRoute
+  AuthedEtiquettesRoute: typeof AuthedEtiquettesRoute
   AuthedImportRoute: typeof AuthedImportRoute
+  AuthedImpressionRoute: typeof AuthedImpressionRoute
   AuthedRechercheRoute: typeof AuthedRechercheRoute
   AuthedStockRoute: typeof AuthedStockRoute
   AuthedVinRoute: typeof AuthedVinRoute
@@ -216,7 +256,9 @@ interface AuthedRouteChildren {
 const AuthedRouteChildren: AuthedRouteChildren = {
   AuthedCorbeilleRoute: AuthedCorbeilleRoute,
   AuthedEntreeRoute: AuthedEntreeRoute,
+  AuthedEtiquettesRoute: AuthedEtiquettesRoute,
   AuthedImportRoute: AuthedImportRoute,
+  AuthedImpressionRoute: AuthedImpressionRoute,
   AuthedRechercheRoute: AuthedRechercheRoute,
   AuthedStockRoute: AuthedStockRoute,
   AuthedVinRoute: AuthedVinRoute,
@@ -233,3 +275,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
