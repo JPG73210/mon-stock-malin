@@ -97,6 +97,7 @@ function EntreePage() {
       toast.success(`Produit ${code} enregistré × ${f.quantite}`);
       if (mode === "airprint") await printLabel(code);
       if (mode === "agent") await sendToAgent(code);
+      if (mode === "download") await downloadPdf(code);
       setF(empty);
     },
     onError: (e: any) => toast.error(e.message ?? "Erreur"),
