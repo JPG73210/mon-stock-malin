@@ -56,7 +56,7 @@ function EntreePage() {
   const [scanLegacy, setScanLegacy] = useState(false);
 
   const save = useMutation({
-    mutationFn: async (printAfter: boolean) => {
+    mutationFn: async (mode: "none" | "airprint" | "agent") => {
       if (!user) throw new Error("Non connecté");
       if (!f.produit) throw new Error("Le produit est obligatoire");
       const dateFull = `${f.date_creation}-01`;
@@ -87,15 +87,18 @@ function EntreePage() {
         if (String(error.message).includes("duplicate")) throw new Error("Ce code existe déjà");
         throw error;
       }
-      return { code, printAfter };
+      return { code, mode };
     },
-    onSuccess: async ({ code, printAfter }) => {
+    onSuccess: async ({ code, mode }) => {
       qc.invalidateQueries({ queryKey: ["products"] });
       qc.invalidateQueries({ queryKey: ["recent-products"] });
       qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
+      qc.invalidateQueries({ queryKey: ["print-jobs"] });
       toast.success(`Produit ${code} enregistré × ${f.quantite}`);
+      const snapshot = { ...f, _code: code };
       setF(empty);
-      if (printAfter) await printLabel(code);
+      if (mode === "airprint") await printLabel(snapshot._code);
+      if (mode === "agent") await sendToAgent(snapshot._code);
     },
     onError: (e: any) => toast.error(e.message ?? "Erreur"),
   });
