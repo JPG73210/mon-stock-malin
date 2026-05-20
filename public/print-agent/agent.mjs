@@ -36,9 +36,22 @@ console.log(`✓ Connecté · imprimante cible: ${cfg.PRINTER}`);
 const POLL_MS = cfg.POLL_MS ?? 4000;
 const isWin = os.platform() === "win32";
 
-async function printPdf(pdfBuffer, jobId) {
+// Mapping format → option media CUPS (doit correspondre à src/lib/print.ts ROLL_SPECS)
+const CUPS_MEDIA = {
+  "23x23":  "Custom.23x23mm",
+  "17x54":  "Custom.17x54mm",
+  "62x29":  "Custom.29x62mm",
+  "62x100": "Custom.62x100mm",
+  "62":     "Custom.62x30mm",
+  // tolérance ancien libellé
+  "30x62":  "Custom.62x30mm",
+  "62x30":  "Custom.62x30mm",
+};
+
+async function printPdf(pdfBuffer, jobId, format) {
   const tmp = path.join(os.tmpdir(), `stockjp-${jobId}.pdf`);
   fs.writeFileSync(tmp, pdfBuffer);
+  const media = CUPS_MEDIA[format] ?? "Custom.62x30mm";
   return new Promise((resolve, reject) => {
     let cmd, args;
     if (isWin) {
@@ -46,7 +59,7 @@ async function printPdf(pdfBuffer, jobId) {
       args = ["-Command", `Start-Process -FilePath '${tmp}' -Verb Print -PassThru | %{ Start-Sleep 4; $_ } | kill`];
     } else {
       cmd = "lp";
-      args = ["-d", cfg.PRINTER, "-o", "media=Custom.62x30mm", tmp];
+      args = ["-d", cfg.PRINTER, "-o", `media=${media}`, "-o", "fit-to-page", tmp];
     }
     const p = spawn(cmd, args, { stdio: "inherit" });
     p.on("close", (code) => {
@@ -70,7 +83,7 @@ async function pollOnce() {
     try {
       if (!j.pdf_base64) throw new Error("PDF absent");
       const buf = Buffer.from(j.pdf_base64, "base64");
-      await printPdf(buf, j.id);
+      await printPdf(buf, j.id, j.format);
       await supabase.from("print_jobs").update({
         status: "printed", printed_at: new Date().toISOString(), error: null,
       }).eq("id", j.id);
