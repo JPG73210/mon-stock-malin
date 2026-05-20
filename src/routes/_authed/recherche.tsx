@@ -113,9 +113,12 @@ function RecherchePage() {
       </div>
 
       <div className="rounded-xl border bg-card p-4 space-y-3">
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button variant={mode === "out" ? "default" : "outline"} onClick={() => setMode("out")}>− Sortie</Button>
           <Button variant={mode === "in" ? "default" : "outline"} onClick={() => setMode("in")}>+ Entrée</Button>
+          <Button variant={mode === "details" ? "default" : "outline"} onClick={() => setMode("details")}>
+            <Pencil className="mr-1 h-4 w-4" /> Détails / Modifier
+          </Button>
         </div>
         <form onSubmit={submit} className="flex gap-2">
           <Input
@@ -163,6 +166,9 @@ function RecherchePage() {
           ))}
         </div>
       </div>
+
+      <ProductEditDialog product={editProduct} open={!!editProduct} onClose={() => setEditProduct(null)} />
+      <WineEditDialog wine={editWine} open={!!editWine} onClose={() => setEditWine(null)} />
     </div>
   );
 }
