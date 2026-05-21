@@ -13,11 +13,12 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Heart, Trash2, Search, Printer, Pencil } from "lucide-react";
+import { Heart, Trash2, Search, Printer, Pencil, Eye } from "lucide-react";
 import { QrCode } from "@/components/QrCode";
 import { printLabelAirprint } from "@/lib/print";
 import { ProductEditDialog } from "@/components/ProductEditDialog";
 import { WineEditDialog } from "@/components/WineEditDialog";
+import { LabelPreviewDialog } from "@/components/LabelPreviewDialog";
 
 export const Route = createFileRoute("/_authed/stock")({ component: StockPage });
 
@@ -47,6 +48,7 @@ function ProductsList() {
   const [empFilter, setEmpFilter] = useState<string>("all");
   const [yearFilter, setYearFilter] = useState<string>("all");
   const [selected, setSelected] = useState<any | null>(null);
+  const [previewing, setPreviewing] = useState<any | null>(null);
   const [editing, setEditing] = useState<any | null>(null);
 
   const { data: products } = useQuery({
@@ -186,6 +188,7 @@ function ProductsList() {
               </div>
               {selected.notes && <p className="text-sm text-muted-foreground border-t pt-3">{selected.notes}</p>}
               <DialogFooter>
+                <Button variant="outline" onClick={() => setPreviewing(selected)}><Eye className="mr-2 h-4 w-4" /> Aperçu</Button>
                 <Button variant="outline" onClick={() => printLabelAirprint(selected.etiquette_format ?? "62", { id: selected.code, produit: selected.produit, animal: selected.animal, fruit: selected.fruit, bague: selected.bague, date: selected.date_creation, poids: selected.poids, unite: selected.unite_poids }, 1).catch(() => toast.error("Impression impossible"))}><Printer className="mr-2 h-4 w-4" /> Imprimer</Button>
                 <Button variant="secondary" onClick={() => { setEditing(selected); setSelected(null); }}>
                   <Pencil className="mr-2 h-4 w-4" /> Modifier
@@ -199,6 +202,23 @@ function ProductsList() {
         </DialogContent>
       </Dialog>
       <ProductEditDialog product={editing} open={!!editing} onClose={() => setEditing(null)} />
+      {previewing && (
+        <LabelPreviewDialog
+          open={!!previewing}
+          onClose={() => setPreviewing(null)}
+          fmt={previewing.etiquette_format ?? "62"}
+          data={{
+            id: previewing.code,
+            produit: previewing.produit,
+            animal: previewing.animal,
+            fruit: previewing.fruit,
+            bague: previewing.bague,
+            date: previewing.date_creation,
+            poids: previewing.poids,
+            unite: previewing.unite_poids,
+          }}
+        />
+      )}
     </div>
   );
 }
