@@ -81,12 +81,14 @@ export async function generateLabelPdf(
     const square   = Math.abs(w - h) < 2; // labels carrés (23×23) → QR + animal + ID compact
 
     // QR : toujours carré, jamais distordu.
+    // Landscape (ex. 62×30) → QR réduit d'1/3 pour laisser la place au texte.
+    const qrLandscape = Math.min(w * 0.5, h - pad * 2) * (2 / 3);
     const qrMax = portrait
       ? Math.min(w - pad * 2, h * 0.6)
-      : Math.min(w * 0.5, h - pad * 2);
+      : qrLandscape;
     const qrSize = square ? Math.min(w, h) * 0.6 : qrMax;
     const qx = square ? pad : (portrait ? (w - qrSize) / 2 : pad);
-    const qy = pad;
+    const qy = square ? pad : (portrait ? pad : (h - qrSize) / 2);
     doc.addImage(qr, "PNG", qx, qy, qrSize, qrSize);
 
     if (square) {
@@ -98,28 +100,31 @@ export async function generateLabelPdf(
       if (data.animal) doc.text(String(data.animal), tx2, pad + 2, { maxWidth: tw2 });
       doc.setFont("helvetica", "normal");
       doc.setFontSize(4.5);
-      doc.text(`N°${data.id}`, tx2, pad + 4.8, { maxWidth: tw2 });
+      if (data.id) doc.text(`N°${data.id}`, tx2, pad + 4.8, { maxWidth: tw2 });
       continue;
     }
 
     // Zone texte
-    const tx = portrait ? pad : qrSize + pad * 2;
-    const ty = portrait ? qy + qrSize + pad + 2.6 : pad + 2.6;
+    const tx = portrait ? pad : qx + qrSize + pad * 1.5;
+    const ty = portrait ? qy + qrSize + pad + 2.6 : pad + 3;
     const tw = portrait ? w - pad * 2 : w - tx - pad;
     let y = ty;
 
+    // Tailles agrandies en landscape pour exploiter l'espace libéré.
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(portrait ? 11 : 8);
-    doc.text(data.id, tx, y, { maxWidth: tw });
+    doc.setFontSize(portrait ? 11 : 10);
+    if (data.id) { doc.text(String(data.id), tx, y, { maxWidth: tw }); }
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(portrait ? 8 : 6);
-    const lh = portrait ? 3.6 : 2.4;
-    y += portrait ? 4 : 2.6;
-    const l1 = [data.produit, data.animal, data.fruit].filter(Boolean).join(" / ");
+    doc.setFontSize(portrait ? 8 : 7.5);
+    const lh = portrait ? 3.6 : 3.2;
+    y += portrait ? 4 : 3.6;
+    const l1 = [data.produit, data.animal, data.fruit].filter((v) => v != null && String(v).trim() !== "").join(" / ");
     if (l1) { doc.text(l1, tx, y, { maxWidth: tw }); y += lh; }
-    const l2 = [data.poids ? `${data.poids} ${data.unite ?? ""}`.trim() : "", data.bague ? `Bague ${data.bague}` : ""].filter(Boolean).join(" · ");
+    const poidsTxt = data.poids != null && String(data.poids).trim() !== "" ? `${data.poids} ${data.unite ?? ""}`.trim() : "";
+    const bagueTxt = data.bague && String(data.bague).trim() !== "" ? `Bague ${data.bague}` : "";
+    const l2 = [poidsTxt, bagueTxt].filter(Boolean).join(" · ");
     if (l2) { doc.text(l2, tx, y, { maxWidth: tw }); y += lh; }
-    if (data.date) doc.text(String(data.date), tx, y, { maxWidth: tw });
+    if (data.date && String(data.date).trim() !== "") doc.text(String(data.date), tx, y, { maxWidth: tw });
   }
   const ab = doc.output("arraybuffer");
   const bytes = new Uint8Array(ab);
