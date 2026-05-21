@@ -13,9 +13,9 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Heart, Trash2, Search, Printer, Pencil, Eye } from "lucide-react";
+import { Heart, Trash2, Search, Printer, Pencil, Eye, Download } from "lucide-react";
 import { QrCode } from "@/components/QrCode";
-import { printLabelAirprint } from "@/lib/print";
+import { printLabelAirprint, downloadLabelPdf } from "@/lib/print";
 import { ProductEditDialog } from "@/components/ProductEditDialog";
 import { WineEditDialog } from "@/components/WineEditDialog";
 import { LabelPreviewDialog } from "@/components/LabelPreviewDialog";
@@ -187,8 +187,9 @@ function ProductsList() {
                 </div>
               </div>
               {selected.notes && <p className="text-sm text-muted-foreground border-t pt-3">{selected.notes}</p>}
-              <DialogFooter>
+              <DialogFooter className="flex-wrap gap-2">
                 <Button variant="outline" onClick={() => setPreviewing(selected)}><Eye className="mr-2 h-4 w-4" /> Aperçu</Button>
+                <Button variant="outline" onClick={() => downloadLabelPdf(selected.etiquette_format ?? "62", { id: selected.code, produit: selected.produit, animal: selected.animal, fruit: selected.fruit, bague: selected.bague, date: selected.date_creation, poids: selected.poids, unite: selected.unite_poids }, 1).catch(() => toast.error("Téléchargement impossible"))}><Download className="mr-2 h-4 w-4" /> Télécharger PDF</Button>
                 <Button variant="outline" onClick={() => printLabelAirprint(selected.etiquette_format ?? "62", { id: selected.code, produit: selected.produit, animal: selected.animal, fruit: selected.fruit, bague: selected.bague, date: selected.date_creation, poids: selected.poids, unite: selected.unite_poids }, 1).catch(() => toast.error("Impression impossible"))}><Printer className="mr-2 h-4 w-4" /> Imprimer</Button>
                 <Button variant="secondary" onClick={() => { setEditing(selected); setSelected(null); }}>
                   <Pencil className="mr-2 h-4 w-4" /> Modifier
