@@ -59,6 +59,7 @@ export function ProductEditDialog({
         <DialogHeader><DialogTitle className="font-mono">{f.code}</DialogTitle></DialogHeader>
         <div className="grid sm:grid-cols-2 gap-3">
           <Row l="Code (ID)"><Input value={f.code ?? ""} onChange={(e) => setF({ ...f, code: e.target.value })} /></Row>
+          <Row l="Ancien code (QR)"><Input value={f.ancien_code ?? ""} placeholder="ex: SP0013" onChange={(e) => setF({ ...f, ancien_code: e.target.value })} /></Row>
           <Row l="Produit"><ManagedSelect field="produit" value={f.produit ?? ""} onChange={(v) => setF({ ...f, produit: v })} /></Row>
           <Row l="Animal"><ManagedSelect field="animal" value={f.animal ?? ""} onChange={(v) => setF({ ...f, animal: v })} /></Row>
           <Row l="Fruit/Légume"><ManagedSelect field="fruit" value={f.fruit ?? ""} onChange={(v) => setF({ ...f, fruit: v })} /></Row>
