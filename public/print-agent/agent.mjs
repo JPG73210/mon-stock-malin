@@ -48,6 +48,19 @@ const CUPS_MEDIA = {
   "62x30":  "Custom.62x30mm",
 };
 
+// Chemins possibles de SumatraPDF sous Windows
+const SUMATRA_CANDIDATES = [
+  cfg.SUMATRA_PATH,
+  "C:\\Program Files\\SumatraPDF\\SumatraPDF.exe",
+  "C:\\Program Files (x86)\\SumatraPDF\\SumatraPDF.exe",
+  process.env.LOCALAPPDATA ? `${process.env.LOCALAPPDATA}\\SumatraPDF\\SumatraPDF.exe` : null,
+].filter(Boolean);
+const sumatraPath = SUMATRA_CANDIDATES.find((p) => { try { return fs.existsSync(p); } catch { return false; } });
+if (isWin) {
+  if (sumatraPath) console.log(`✓ SumatraPDF: ${sumatraPath}`);
+  else console.warn("⚠ SumatraPDF introuvable — installez-le : https://www.sumatrapdfreader.org/");
+}
+
 async function printPdf(pdfBuffer, jobId, format) {
   const tmp = path.join(os.tmpdir(), `stockjp-${jobId}.pdf`);
   fs.writeFileSync(tmp, pdfBuffer);
@@ -55,8 +68,15 @@ async function printPdf(pdfBuffer, jobId, format) {
   return new Promise((resolve, reject) => {
     let cmd, args;
     if (isWin) {
-      cmd = "powershell";
-      args = ["-Command", `Start-Process -FilePath '${tmp}' -Verb Print -PassThru | %{ Start-Sleep 4; $_ } | kill`];
+      if (!sumatraPath) {
+        return reject(new Error(
+          "SumatraPDF introuvable. Installez-le depuis https://www.sumatrapdfreader.org/ " +
+          "ou indiquez son chemin via SUMATRA_PATH dans config.json."
+        ));
+      }
+      cmd = sumatraPath;
+      // -print-to imprime en silence sur l'imprimante nommée puis quitte.
+      args = ["-print-to", cfg.PRINTER, "-silent", "-exit-when-done", tmp];
     } else {
       cmd = "lp";
       args = ["-d", cfg.PRINTER, "-o", `media=${media}`, "-o", "fit-to-page", tmp];
@@ -66,6 +86,7 @@ async function printPdf(pdfBuffer, jobId, format) {
       try { fs.unlinkSync(tmp); } catch {}
       code === 0 ? resolve() : reject(new Error(`${cmd} a retourné ${code}`));
     });
+    p.on("error", (err) => reject(err));
   });
 }
 
