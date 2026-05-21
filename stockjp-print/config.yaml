@@ -1,0 +1,26 @@
+name: "Stock JP/JC Print Agent"
+version: "1.0.0"
+slug: "stockjp_print"
+description: "Imprime automatiquement les étiquettes Stock JP/JC sur la Brother QL-810Wc (WiFi)."
+arch:
+  - amd64
+  - aarch64
+  - armv7
+startup: services
+boot: auto
+init: false
+host_network: true
+options:
+  SUPABASE_URL: "https://ppwvpxjhccpxolcfcyyv.supabase.co"
+  SUPABASE_ANON_KEY: ""
+  EMAIL: ""
+  PASSWORD: ""
+  PRINTER_IP: "192.168.1.50"
+  POLL_MS: 4000
+schema:
+  SUPABASE_URL: "url"
+  SUPABASE_ANON_KEY: "str"
+  EMAIL: "email"
+  PASSWORD: "password"
+  PRINTER_IP: "str"
+  POLL_MS: "int(1000,60000)"
