@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Camera, X, Minus, Plus, Trash2, Pencil } from "lucide-react";
+import { QrCode as QrIcon, Barcode, X, Minus, Plus, Trash2, Pencil } from "lucide-react";
 import { CameraScanner } from "@/components/CameraScanner";
 import { ProductEditDialog } from "@/components/ProductEditDialog";
 import { WineEditDialog } from "@/components/WineEditDialog";
