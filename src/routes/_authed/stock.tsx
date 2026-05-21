@@ -13,7 +13,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Heart, Trash2, Search, Printer, Pencil, Eye, Download } from "lucide-react";
+import { Heart, Trash2, Search, Printer, Pencil, Eye, Download, Share2 } from "lucide-react";
 import { QrCode } from "@/components/QrCode";
 import { printLabelAirprint, downloadLabelPdf, shareLabelPdf } from "@/lib/print";
 import { ProductEditDialog } from "@/components/ProductEditDialog";
