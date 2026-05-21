@@ -81,8 +81,11 @@ export async function generateLabelPdf(
     const square   = Math.abs(w - h) < 2; // labels carrés (23×23) → QR + animal + ID compact
 
     // QR : toujours carré, jamais distordu.
-    // Landscape (ex. 62×30) → QR réduit d'1/3 pour laisser la place au texte.
-    const qrLandscape = Math.min(w * 0.5, h - pad * 2) * (2 / 3);
+    // 62×30 (continu) → QR réduit d'1/3 (étiquette spécifiquement étroite).
+    // Autres landscape (17×54, 62×29…) → QR = pleine hauteur pour libérer texte.
+    const isReducedRoll = Math.abs(w - 62) < 0.5 && Math.abs(h - 30) < 0.5;
+    const qrLandscapeFull = Math.min(w * 0.5, h - pad * 2);
+    const qrLandscape = isReducedRoll ? qrLandscapeFull * (2 / 3) : qrLandscapeFull;
     const qrMax = portrait
       ? Math.min(w - pad * 2, h * 0.6)
       : qrLandscape;
@@ -104,20 +107,26 @@ export async function generateLabelPdf(
       continue;
     }
 
-    // Zone texte
+    // Zone texte — occupe TOUT l'espace restant à droite du QR.
     const tx = portrait ? pad : qx + qrSize + pad * 1.5;
     const ty = portrait ? qy + qrSize + pad + 2.6 : pad + 3;
     const tw = portrait ? w - pad * 2 : w - tx - pad;
+    const th = portrait ? h - ty - pad : h - pad * 2;
     let y = ty;
 
-    // Tailles agrandies en landscape pour exploiter l'espace libéré.
+    // Tailles dimensionnées en fonction de la hauteur réellement disponible :
+    // étiquettes étroites comme 17×54 → texte agrandi pour remplir le ruban.
+    const tall = th >= 25;            // 62×30, 62×29 → 3-4 lignes confortables
+    const titleSize = portrait ? 11 : (tall ? 10 : 9);
+    const bodySize = portrait ? 8 : (tall ? 7.5 : 7);
+    const lh = portrait ? 3.6 : (tall ? 3.4 : 3.2);
+
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(portrait ? 11 : 10);
+    doc.setFontSize(titleSize);
     if (data.id) { doc.text(String(data.id), tx, y, { maxWidth: tw }); }
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(portrait ? 8 : 7.5);
-    const lh = portrait ? 3.6 : 3.2;
-    y += portrait ? 4 : 3.6;
+    doc.setFontSize(bodySize);
+    y += lh + 0.4;
     const l1 = [data.produit, data.animal, data.fruit].filter((v) => v != null && String(v).trim() !== "").join(" / ");
     if (l1) { doc.text(l1, tx, y, { maxWidth: tw }); y += lh; }
     const poidsTxt = data.poids != null && String(data.poids).trim() !== "" ? `${data.poids} ${data.unite ?? ""}`.trim() : "";

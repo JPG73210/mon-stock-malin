@@ -65,10 +65,10 @@ export function ProductEditDialog({
           <Row l="Fruit/Légume"><ManagedSelect field="fruit" value={f.fruit ?? ""} onChange={(v) => setF({ ...f, fruit: v })} /></Row>
           <Row l="Emplacement"><ManagedSelect field="emplacement" value={f.emplacement ?? ""} onChange={(v) => setF({ ...f, emplacement: v })} /></Row>
           <Row l="Bague"><Input value={f.bague ?? ""} onChange={(e) => setF({ ...f, bague: e.target.value })} /></Row>
-          <Row l="Version"><ManagedSelect field="version" value={f.version ?? ""} onChange={(v) => setF({ ...f, version: v })} /></Row>
+          <Row l="Version"><ManagedSelect field="version" value={f.version ?? ""} onChange={(v) => setF({ ...f, version: v })} allowEmpty /></Row>
           <Row l="Quantité"><Input type="number" value={f.quantite ?? 1} onChange={(e) => setF({ ...f, quantite: e.target.value })} /></Row>
           <Row l="Poids"><Input type="number" step="0.01" value={f.poids ?? ""} onChange={(e) => setF({ ...f, poids: e.target.value })} /></Row>
-          <Row l="Unité"><ManagedSelect field="unite_poids" value={f.unite_poids ?? ""} onChange={(v) => setF({ ...f, unite_poids: v })} /></Row>
+          <Row l="Unité"><ManagedSelect field="unite_poids" value={f.unite_poids ?? ""} onChange={(v) => setF({ ...f, unite_poids: v })} allowEmpty /></Row>
           <Row l="Format étiquette"><ManagedSelect field="etiquette_format" value={f.etiquette_format ?? ""} onChange={(v) => setF({ ...f, etiquette_format: v })} /></Row>
         </div>
         <Row l="Notes"><Textarea value={f.notes ?? ""} onChange={(e) => setF({ ...f, notes: e.target.value })} rows={2} /></Row>
