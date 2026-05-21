@@ -198,6 +198,30 @@ export async function printLabelAirprint(
     iframe.remove();
   }, 120_000);
 }
+/** Partage le PDF vers une app native (iPrint&Label sur Android/iOS). */
+export async function shareLabelPdf(
+  fmt: LabelFormat | string,
+  data: LabelData,
+  quantite = 1,
+): Promise<boolean> {
+  const b64 = await generateLabelPdf(fmt, data, quantite);
+  const blob = b64ToBlob(b64, "application/pdf");
+  const file = new File([blob], `etiquette-${data.id}.pdf`, { type: "application/pdf" });
+  const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
+  if (nav.canShare && nav.canShare({ files: [file] })) {
+    try {
+      await nav.share({ files: [file], title: `Étiquette ${data.id}` });
+      return true;
+    } catch (e: any) {
+      if (e?.name === "AbortError") return false;
+      throw e;
+    }
+  }
+  // Fallback : téléchargement (l'utilisateur ouvre ensuite avec iPrint&Label)
+  await downloadLabelPdf(fmt, data, quantite);
+  return true;
+}
+
 
 /** Téléchargement direct du PDF (utile si l'iframe est bloquée). */
 export async function downloadLabelPdf(
