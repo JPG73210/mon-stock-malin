@@ -25,7 +25,7 @@ type Hit = {
 function RecherchePage() {
   const qc = useQueryClient();
   const [input, setInput] = useState("");
-  const [scanning, setScanning] = useState(false);
+  const [scanning, setScanning] = useState<"qr" | "barcode" | null>(null);
   const [hits, setHits] = useState<Hit[]>([]);
   const [mode, setMode] = useState<"in" | "out" | "details">("out");
   const [editProduct, setEditProduct] = useState<any | null>(null);
