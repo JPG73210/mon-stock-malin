@@ -124,11 +124,29 @@ export async function generateLabelPdf(
     doc.setFont("helvetica", "bold");
     doc.setFontSize(titleSize);
     if (data.id) { doc.text(String(data.id), tx, y, { maxWidth: tw }); }
+    y += lh + 0.4;
+
+    // produit + animal : taille DOUBLÉE sur 62×30 et 17×54 (rouleaux étroits)
+    // pour maximiser la lisibilité à distance.
+    const isWide62x30 = isReducedRoll;
+    const isNarrow17x54 = Math.abs(w - 54) < 0.5 && Math.abs(h - 17) < 0.5;
+    const boostProductAnimal = isWide62x30 || isNarrow17x54;
+    const productAnimalSize = boostProductAnimal ? bodySize * 2 : bodySize;
+    const productAnimalLh = boostProductAnimal ? lh * 1.9 : lh;
+
+    const pa = [data.produit, data.animal].filter((v) => v != null && String(v).trim() !== "").join(" / ");
+    if (pa) {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(productAnimalSize);
+      doc.text(pa, tx, y, { maxWidth: tw });
+      y += productAnimalLh;
+    }
+
     doc.setFont("helvetica", "normal");
     doc.setFontSize(bodySize);
-    y += lh + 0.4;
-    const l1 = [data.produit, data.animal, data.fruit].filter((v) => v != null && String(v).trim() !== "").join(" / ");
-    if (l1) { doc.text(l1, tx, y, { maxWidth: tw }); y += lh; }
+    if (data.fruit && String(data.fruit).trim() !== "") {
+      doc.text(String(data.fruit), tx, y, { maxWidth: tw }); y += lh;
+    }
     const poidsTxt = data.poids != null && String(data.poids).trim() !== "" ? `${data.poids} ${data.unite ?? ""}`.trim() : "";
     const bagueTxt = data.bague && String(data.bague).trim() !== "" ? `Bague ${data.bague}` : "";
     const l2 = [poidsTxt, bagueTxt].filter(Boolean).join(" · ");
@@ -180,6 +198,30 @@ export async function printLabelAirprint(
     iframe.remove();
   }, 120_000);
 }
+/** Partage le PDF vers une app native (iPrint&Label sur Android/iOS). */
+export async function shareLabelPdf(
+  fmt: LabelFormat | string,
+  data: LabelData,
+  quantite = 1,
+): Promise<boolean> {
+  const b64 = await generateLabelPdf(fmt, data, quantite);
+  const blob = b64ToBlob(b64, "application/pdf");
+  const file = new File([blob], `etiquette-${data.id}.pdf`, { type: "application/pdf" });
+  const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
+  if (nav.canShare && nav.canShare({ files: [file] })) {
+    try {
+      await nav.share({ files: [file], title: `Étiquette ${data.id}` });
+      return true;
+    } catch (e: any) {
+      if (e?.name === "AbortError") return false;
+      throw e;
+    }
+  }
+  // Fallback : téléchargement (l'utilisateur ouvre ensuite avec iPrint&Label)
+  await downloadLabelPdf(fmt, data, quantite);
+  return true;
+}
+
 
 /** Téléchargement direct du PDF (utile si l'iframe est bloquée). */
 export async function downloadLabelPdf(
