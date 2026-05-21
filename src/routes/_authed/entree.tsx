@@ -187,7 +187,7 @@ function EntreePage() {
               <Input type="month" value={f.date_creation} onChange={(e) => setF({ ...f, date_creation: e.target.value })} />
             </Field>
             <Field label="Version">
-              <ManagedSelect field="version" value={f.version} onChange={(v) => setF({ ...f, version: v })} />
+              <ManagedSelect field="version" value={f.version} onChange={(v) => setF({ ...f, version: v })} allowEmpty />
             </Field>
             <Field label="N° Bague / Marque">
               <Input value={f.bague} onChange={(e) => setF({ ...f, bague: e.target.value })} placeholder="ex: FR123456" />
@@ -214,7 +214,7 @@ function EntreePage() {
               <Input type="number" step="0.01" value={f.poids} onChange={(e) => setF({ ...f, poids: e.target.value })} />
             </Field>
             <Field label="Unité">
-              <ManagedSelect field="unite_poids" value={f.unite_poids} onChange={(v) => setF({ ...f, unite_poids: v })} />
+              <ManagedSelect field="unite_poids" value={f.unite_poids} onChange={(v) => setF({ ...f, unite_poids: v })} allowEmpty />
             </Field>
             <Field label="Format d'étiquette">
               <ManagedSelect field="etiquette_format" value={f.etiquette_format} onChange={(v) => setF({ ...f, etiquette_format: v })} />
