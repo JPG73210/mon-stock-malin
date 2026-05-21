@@ -1,0 +1,10 @@
+{
+  "SUPABASE_URL": "https://ppwvpxjhccpxolcfcyyv.supabase.co",
+  "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBwd3ZweGpoY2NweG9sY2ZjeXl2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNTIyNDUsImV4cCI6MjA5NDgyODI0NX0.nkPOLV5RWoft02qdUKPmVesT-HJ1WQU10cysGyov5Ig",
+  "EMAIL": "ton@email.com",
+  "PASSWORD": "ton-mot-de-passe",
+  "PRINTER_IP": "192.168.1.50",
+  "MODEL": "QL-810W",
+  "POLL_MS": 4000,
+  "DPI": 300
+}

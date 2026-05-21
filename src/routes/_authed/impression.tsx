@@ -93,15 +93,16 @@ function ImpressionPage() {
           </p>
           <div className="flex flex-wrap gap-2 mt-3">
             <Button size="sm" variant="outline" asChild>
-              <a href="/print-agent.zip" download>Agent Node.js</a>
+              <a href="/print-agent.zip" download>Agent Node.js (PC + Sumatra)</a>
             </Button>
             <Button size="sm" variant="default" asChild>
-              <a href="/ha-addon.zip" download>Add-on Home Assistant (NUC)</a>
+              <a href="/print-agent-py/README.md" target="_blank" rel="noreferrer">Agent Python (IP directe WiFi)</a>
             </Button>
           </div>
           <p className="text-xs text-muted-foreground mt-2">
-            HA OS : dézippez, placez le dossier <code>ha-addon/</code> dans un dépôt GitHub, ajoutez-le dans HA → Modules complémentaires → Dépôts.
+            <strong>Python (recommandé)</strong> : envoie directement à l'IP WiFi de la QL-810W, aucun pilote Windows requis. Voir le README pour l'installation pas à pas.
           </p>
+
         </div>
       </div>
 
