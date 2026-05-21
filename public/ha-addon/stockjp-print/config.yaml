@@ -1,5 +1,5 @@
 name: "Stock JP/JC Print Agent"
-version: "1.0.0"
+version: "1.0.1"
 slug: "stockjp_print"
 description: "Imprime automatiquement les étiquettes Stock JP/JC sur la Brother QL-810Wc (WiFi)."
 arch:
