@@ -1,5 +1,5 @@
-ARG BUILD_FROM
-FROM $BUILD_FROM
+ARG BUILD_FROM=ghcr.io/home-assistant/amd64-base-debian:bookworm
+FROM ${BUILD_FROM}
 
 ENV LANG=C.UTF-8 \
     DEBIAN_FRONTEND=noninteractive
