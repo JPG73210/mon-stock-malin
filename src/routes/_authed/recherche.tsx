@@ -215,6 +215,9 @@ function RecherchePage() {
               <Button size="icon" variant="outline" onClick={() => adjustQty.mutate({ hit: h, delta: +1 })}>
                 <Plus className="h-4 w-4" />
               </Button>
+              <Button size="icon" variant="ghost" onClick={() => { if (h.kind === "product") setEditProduct(h.raw); else setEditWine(h.raw); }}>
+                <Pencil className="h-4 w-4" />
+              </Button>
               <Button size="icon" variant="ghost" onClick={() => setHits((p) => p.filter((x) => x !== h))}>
                 <Trash2 className="h-4 w-4" />
               </Button>
