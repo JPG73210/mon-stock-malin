@@ -3,8 +3,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Printer, RotateCcw, Trash2, Download } from "lucide-react";
+import { Printer, RotateCcw, Trash2, Download, FlaskConical } from "lucide-react";
 import { toast } from "sonner";
+import { enqueuePrintJob } from "@/lib/print";
 
 export const Route = createFileRoute("/_authed/impression")({
   component: ImpressionPage,
@@ -40,6 +41,21 @@ function ImpressionPage() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["print-jobs"] }),
+  });
+
+  const createTest = useMutation({
+    mutationFn: async () => {
+      await enqueuePrintJob("62", {
+        id: `TEST-${new Date().toISOString().slice(11, 19)}`,
+        produit: "Test impression",
+        date: new Date().toLocaleDateString("fr-FR"),
+      }, 1);
+    },
+    onSuccess: () => {
+      toast.success("Job de test créé");
+      qc.invalidateQueries({ queryKey: ["print-jobs"] });
+    },
+    onError: (e: any) => toast.error(e.message ?? "Erreur"),
   });
 
   function downloadPdf(j: any) {
@@ -89,7 +105,12 @@ function ImpressionPage() {
         </div>
       </div>
 
-      <h2 className="font-semibold mb-3">File ({jobs.length})</h2>
+      <h2 className="font-semibold mb-3 flex items-center justify-between">
+        <span>File ({jobs.length})</span>
+        <Button size="sm" variant="outline" onClick={() => createTest.mutate()} disabled={createTest.isPending}>
+          <FlaskConical className="h-4 w-4 mr-1" /> Créer un job de test
+        </Button>
+      </h2>
       <div className="space-y-2">
         {jobs.length === 0 && <p className="text-muted-foreground text-sm">Aucun travail d'impression.</p>}
         {jobs.map((j: any) => (
