@@ -103,6 +103,7 @@ export type Database = {
       }
       products: {
         Row: {
+          ancien_code: string | null
           animal: string | null
           bague: string | null
           code: string
@@ -125,6 +126,7 @@ export type Database = {
           version: string | null
         }
         Insert: {
+          ancien_code?: string | null
           animal?: string | null
           bague?: string | null
           code: string
@@ -147,6 +149,7 @@ export type Database = {
           version?: string | null
         }
         Update: {
+          ancien_code?: string | null
           animal?: string | null
           bague?: string | null
           code?: string
