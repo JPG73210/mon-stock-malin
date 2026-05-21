@@ -45,8 +45,12 @@ function RecherchePage() {
       // Ancien format pipe-séparé : "SP0013||Saucisson|Porc|1|||01/01/2026|"
       if (code.includes("|")) code = code.split("|")[0].trim();
     }
-    // search products by code
-    const { data: prod } = await supabase.from("products").select("*").eq("code", code).is("deleted_at", null).maybeSingle();
+    // search products by code, then by ancien_code (anciens QR)
+    let { data: prod } = await supabase.from("products").select("*").eq("code", code).is("deleted_at", null).maybeSingle();
+    if (!prod) {
+      const r = await supabase.from("products").select("*").eq("ancien_code", code).is("deleted_at", null).maybeSingle();
+      prod = r.data;
+    }
     if (prod) {
       if (mode === "details") { setEditProduct(prod); return; }
       addHit({ id: prod.id, kind: "product", label: prod.produit, sub: `${prod.code} · ${prod.emplacement}`, raw: prod });
