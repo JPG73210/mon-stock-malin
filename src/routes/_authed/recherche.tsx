@@ -132,11 +132,35 @@ function RecherchePage() {
             className="text-base"
           />
           <Button type="submit">OK</Button>
-          <Button type="button" variant="outline" onClick={() => setScanning(!scanning)}>
-            {scanning ? <X className="h-4 w-4" /> : <Camera className="h-4 w-4" />}
-          </Button>
         </form>
-        {scanning && <CameraScanner continuous onScan={onScan} onClose={() => setScanning(false)} />}
+        <div className="flex gap-2 flex-wrap">
+          <Button
+            type="button"
+            variant={scanning === "qr" ? "default" : "outline"}
+            onClick={() => setScanning(scanning === "qr" ? null : "qr")}
+            className="flex-1"
+          >
+            {scanning === "qr" ? <X className="mr-2 h-4 w-4" /> : <QrIcon className="mr-2 h-4 w-4" />}
+            Scanner QR
+          </Button>
+          <Button
+            type="button"
+            variant={scanning === "barcode" ? "default" : "outline"}
+            onClick={() => setScanning(scanning === "barcode" ? null : "barcode")}
+            className="flex-1"
+          >
+            {scanning === "barcode" ? <X className="mr-2 h-4 w-4" /> : <Barcode className="mr-2 h-4 w-4" />}
+            Scanner code-barres
+          </Button>
+        </div>
+        {scanning && (
+          <CameraScanner
+            continuous
+            formats={scanning}
+            onScan={onScan}
+            onClose={() => setScanning(null)}
+          />
+        )}
       </div>
 
       <div className="rounded-xl border bg-card p-4">
