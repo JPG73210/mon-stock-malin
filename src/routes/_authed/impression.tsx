@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Printer, RotateCcw, Trash2, Download, FlaskConical } from "lucide-react";
+import { Printer, RotateCcw, Trash2, Download, FlaskConical, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 import { enqueuePrintJob } from "@/lib/print";
 
