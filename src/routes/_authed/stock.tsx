@@ -48,6 +48,7 @@ function ProductsList() {
   const [empFilter, setEmpFilter] = useState<string>("all");
   const [yearFilter, setYearFilter] = useState<string>("all");
   const [selected, setSelected] = useState<any | null>(null);
+  const [previewing, setPreviewing] = useState<any | null>(null);
   const [editing, setEditing] = useState<any | null>(null);
 
   const { data: products } = useQuery({
