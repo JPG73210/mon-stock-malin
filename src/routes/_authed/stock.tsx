@@ -202,6 +202,23 @@ function ProductsList() {
         </DialogContent>
       </Dialog>
       <ProductEditDialog product={editing} open={!!editing} onClose={() => setEditing(null)} />
+      {previewing && (
+        <LabelPreviewDialog
+          open={!!previewing}
+          onClose={() => setPreviewing(null)}
+          fmt={previewing.etiquette_format ?? "62"}
+          data={{
+            id: previewing.code,
+            produit: previewing.produit,
+            animal: previewing.animal,
+            fruit: previewing.fruit,
+            bague: previewing.bague,
+            date: previewing.date_creation,
+            poids: previewing.poids,
+            unite: previewing.unite_poids,
+          }}
+        />
+      )}
     </div>
   );
 }
