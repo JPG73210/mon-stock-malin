@@ -75,9 +75,17 @@ function ImpressionPage() {
           <p className="text-sm text-muted-foreground mt-2">
             Sur un PC/Mac/Raspberry Pi allumé : un petit script Node.js scrute la file et imprime via CUPS (<code>lp</code>) sur votre QL-810Wc. 100% automatique.
           </p>
-          <Button size="sm" variant="outline" className="mt-3" asChild>
-            <a href="/print-agent.zip" download>Télécharger l'agent</a>
-          </Button>
+          <div className="flex flex-wrap gap-2 mt-3">
+            <Button size="sm" variant="outline" asChild>
+              <a href="/print-agent.zip" download>Agent Node.js</a>
+            </Button>
+            <Button size="sm" variant="default" asChild>
+              <a href="/ha-addon.zip" download>Add-on Home Assistant (NUC)</a>
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            HA OS : dézippez, placez le dossier <code>ha-addon/</code> dans un dépôt GitHub, ajoutez-le dans HA → Modules complémentaires → Dépôts.
+          </p>
         </div>
       </div>
 
