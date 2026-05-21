@@ -43,6 +43,21 @@ function ImpressionPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["print-jobs"] }),
   });
 
+  const createTest = useMutation({
+    mutationFn: async () => {
+      await enqueuePrintJob("62", {
+        id: `TEST-${new Date().toISOString().slice(11, 19)}`,
+        produit: "Test impression",
+        date: new Date().toLocaleDateString("fr-FR"),
+      }, 1);
+    },
+    onSuccess: () => {
+      toast.success("Job de test créé");
+      qc.invalidateQueries({ queryKey: ["print-jobs"] });
+    },
+    onError: (e: any) => toast.error(e.message ?? "Erreur"),
+  });
+
   function downloadPdf(j: any) {
     if (!j.pdf_base64) return toast.error("Pas de PDF disponible");
     const bin = atob(j.pdf_base64);
