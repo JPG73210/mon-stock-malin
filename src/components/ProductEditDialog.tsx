@@ -27,7 +27,7 @@ export function ProductEditDialog({
         quantite: Number(f.quantite) || 1,
         poids: f.poids ? Number(f.poids) : null, unite_poids: f.unite_poids,
         etiquette_format: f.etiquette_format, notes: f.notes || null,
-        code: f.code,
+        code: f.code, ancien_code: f.ancien_code || null,
       }).eq("id", f.id);
       if (error) throw error;
     },
