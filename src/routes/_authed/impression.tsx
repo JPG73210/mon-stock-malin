@@ -105,7 +105,12 @@ function ImpressionPage() {
         </div>
       </div>
 
-      <h2 className="font-semibold mb-3">File ({jobs.length})</h2>
+      <h2 className="font-semibold mb-3 flex items-center justify-between">
+        <span>File ({jobs.length})</span>
+        <Button size="sm" variant="outline" onClick={() => createTest.mutate()} disabled={createTest.isPending}>
+          <FlaskConical className="h-4 w-4 mr-1" /> Créer un job de test
+        </Button>
+      </h2>
       <div className="space-y-2">
         {jobs.length === 0 && <p className="text-muted-foreground text-sm">Aucun travail d'impression.</p>}
         {jobs.map((j: any) => (
