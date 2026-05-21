@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Printer, RotateCcw, Trash2, Download, FlaskConical } from "lucide-react";
+import { Printer, RotateCcw, Trash2, Download, FlaskConical, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 import { enqueuePrintJob } from "@/lib/print";
 
@@ -77,9 +77,9 @@ function ImpressionPage() {
   return (
     <div className="p-6 md:p-8 max-w-5xl">
       <h1 className="text-3xl font-bold mb-2">Impression</h1>
-      <p className="text-muted-foreground mb-6">File d'impression vers la Brother QL-810Wc. Deux options : AirPrint (PDF direct) ou agent local.</p>
+      <p className="text-muted-foreground mb-6">File d'impression vers la Brother QL-810Wc. Trois options selon votre appareil : AirPrint (iOS/macOS), Android (Brother Print Service) ou agent local (PC/Mac).</p>
 
-      <div className="grid md:grid-cols-2 gap-4 mb-6">
+      <div className="grid md:grid-cols-3 gap-4 mb-6">
         <div className="border rounded-lg p-4 bg-card">
           <h2 className="font-semibold flex items-center gap-2"><Printer className="h-4 w-4" /> Option 1 — AirPrint</h2>
           <p className="text-sm text-muted-foreground mt-2">
@@ -87,9 +87,18 @@ function ImpressionPage() {
           </p>
         </div>
         <div className="border rounded-lg p-4 bg-card">
-          <h2 className="font-semibold flex items-center gap-2"><Download className="h-4 w-4" /> Option 2 — Agent local</h2>
+          <h2 className="font-semibold flex items-center gap-2"><Smartphone className="h-4 w-4" /> Option 2 — Android</h2>
           <p className="text-sm text-muted-foreground mt-2">
-            Sur un PC/Mac/Raspberry Pi allumé : un petit script Node.js scrute la file et imprime via CUPS (<code>lp</code>) sur votre QL-810Wc. 100% automatique.
+            Installez <strong>Brother Print Service Plugin</strong> depuis le Play Store, activez-le dans <em>Paramètres → Impression</em>. Assurez-vous que le téléphone et la QL-810W sont sur le même WiFi.
+          </p>
+          <p className="text-sm text-muted-foreground mt-2">
+            Dans l'app → <strong>Partager</strong> → choisissez <strong>Imprimer</strong> → la QL-810W apparaît automatiquement. Laissez le plugin sur « Détection auto » — surtout pas « A4 ».
+          </p>
+        </div>
+        <div className="border rounded-lg p-4 bg-card">
+          <h2 className="font-semibold flex items-center gap-2"><Download className="h-4 w-4" /> Option 3 — Agent local</h2>
+          <p className="text-sm text-muted-foreground mt-2">
+            Sur un PC/Mac/Raspberry Pi allumé : un petit script scrute la file et imprime automatiquement sur votre QL-810Wc.
           </p>
           <div className="flex flex-wrap gap-2 mt-3">
             <Button size="sm" variant="outline" asChild>
@@ -100,9 +109,8 @@ function ImpressionPage() {
             </Button>
           </div>
           <p className="text-xs text-muted-foreground mt-2">
-            <strong>Python (recommandé)</strong> : envoie directement à l'IP WiFi de la QL-810W, aucun pilote Windows requis. Voir le README pour l'installation pas à pas.
+            <strong>Python (recommandé)</strong> : envoie directement à l'IP WiFi de la QL-810W, aucun pilote Windows requis. Voir le README.
           </p>
-
         </div>
       </div>
 
