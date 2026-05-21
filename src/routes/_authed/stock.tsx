@@ -13,11 +13,12 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Heart, Trash2, Search, Printer, Pencil } from "lucide-react";
+import { Heart, Trash2, Search, Printer, Pencil, Eye } from "lucide-react";
 import { QrCode } from "@/components/QrCode";
 import { printLabelAirprint } from "@/lib/print";
 import { ProductEditDialog } from "@/components/ProductEditDialog";
 import { WineEditDialog } from "@/components/WineEditDialog";
+import { LabelPreviewDialog } from "@/components/LabelPreviewDialog";
 
 export const Route = createFileRoute("/_authed/stock")({ component: StockPage });
 
