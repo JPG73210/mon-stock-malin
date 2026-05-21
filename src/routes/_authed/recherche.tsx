@@ -63,6 +63,31 @@ function RecherchePage() {
       addHit({ id: wine.id, kind: "wine", label: wine.chateau ?? "Vin", sub: `${wine.type_vin} ${wine.millesime ?? ""}`.trim(), raw: wine });
       return;
     }
+    // Recherche texte : produit / animal / fruit (stock en cours uniquement)
+    const term = text.trim();
+    const like = `%${term}%`;
+    const { data: matches } = await supabase
+      .from("products")
+      .select("*")
+      .is("deleted_at", null)
+      .gt("quantite", 0)
+      .or(`produit.ilike.${like},animal.ilike.${like},fruit.ilike.${like}`)
+      .order("produit", { ascending: true })
+      .limit(20);
+    if (matches && matches.length > 0) {
+      if (mode === "details" && matches.length === 1) { setEditProduct(matches[0]); return; }
+      for (const m of matches) {
+        addHit({
+          id: m.id,
+          kind: "product",
+          label: m.produit,
+          sub: [m.animal, m.fruit, m.code, m.emplacement].filter(Boolean).join(" · "),
+          raw: m,
+        });
+      }
+      toast.success(`${matches.length} produit(s) trouvé(s)`);
+      return;
+    }
     toast.error("Aucune correspondance pour : " + text);
   }
 
