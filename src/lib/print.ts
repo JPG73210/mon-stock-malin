@@ -124,11 +124,29 @@ export async function generateLabelPdf(
     doc.setFont("helvetica", "bold");
     doc.setFontSize(titleSize);
     if (data.id) { doc.text(String(data.id), tx, y, { maxWidth: tw }); }
+    y += lh + 0.4;
+
+    // produit + animal : taille DOUBLÉE sur 62×30 et 17×54 (rouleaux étroits)
+    // pour maximiser la lisibilité à distance.
+    const isWide62x30 = isReducedRoll;
+    const isNarrow17x54 = Math.abs(w - 54) < 0.5 && Math.abs(h - 17) < 0.5;
+    const boostProductAnimal = isWide62x30 || isNarrow17x54;
+    const productAnimalSize = boostProductAnimal ? bodySize * 2 : bodySize;
+    const productAnimalLh = boostProductAnimal ? lh * 1.9 : lh;
+
+    const pa = [data.produit, data.animal].filter((v) => v != null && String(v).trim() !== "").join(" / ");
+    if (pa) {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(productAnimalSize);
+      doc.text(pa, tx, y, { maxWidth: tw });
+      y += productAnimalLh;
+    }
+
     doc.setFont("helvetica", "normal");
     doc.setFontSize(bodySize);
-    y += lh + 0.4;
-    const l1 = [data.produit, data.animal, data.fruit].filter((v) => v != null && String(v).trim() !== "").join(" / ");
-    if (l1) { doc.text(l1, tx, y, { maxWidth: tw }); y += lh; }
+    if (data.fruit && String(data.fruit).trim() !== "") {
+      doc.text(String(data.fruit), tx, y, { maxWidth: tw }); y += lh;
+    }
     const poidsTxt = data.poids != null && String(data.poids).trim() !== "" ? `${data.poids} ${data.unite ?? ""}`.trim() : "";
     const bagueTxt = data.bague && String(data.bague).trim() !== "" ? `Bague ${data.bague}` : "";
     const l2 = [poidsTxt, bagueTxt].filter(Boolean).join(" · ");
