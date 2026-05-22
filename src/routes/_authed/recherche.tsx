@@ -45,6 +45,10 @@ function RecherchePage() {
       // Ancien format pipe-séparé : "SP0013||Saucisson|Porc|1|||01/01/2026|"
       if (code.includes("|")) code = code.split("|")[0].trim();
     }
+    // Normalise au format legacy "AA0000" (2 lettres + 4 chiffres) si présent
+    const legacy = code.toUpperCase().match(/[A-Z]{2}\d{4}/);
+    if (legacy) code = legacy[0];
+
     // search products by code, then by ancien_code (anciens QR)
     let { data: prod } = await supabase.from("products").select("*").eq("code", code).is("deleted_at", null).maybeSingle();
     if (!prod) {
