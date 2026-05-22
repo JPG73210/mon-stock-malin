@@ -1,93 +1,82 @@
 ## Objectif
 
-Rendre l'app utilisable avec ton stock existant et tes habitudes : listes déroulantes éditables, gestion des entrées (modifier/supprimer), import des anciens QR codes, lecture EAN.
+Séparer **Recherche** et **Inventaire** en deux pages distinctes, et ajouter un vrai mode inventaire physique avec suivi des sorties.
 
-## 1. Listes déroulantes éditables (auto-apprenantes)
+---
 
-Nouvelle table `user_options` :
-- `id`, `user_id`, `field` (clé : `produit`, `animal`, `fruit`, `emplacement`, `unite_poids`, `chateau`, `type_vin`, `couleur_vin`, `millesime`, `etiquette_format`), `value`, `created_at`
-- Unique sur (user_id, field, value)
-- RLS : own rows uniquement
+## 1. Page Recherche (allégée) — `/recherche`
 
-Nouveau composant `<ManagedSelect field="produit" />` :
-- Charge les valeurs depuis `user_options` + valeurs de base (`constants.ts`) fusionnées
-- Option "+ Ajouter…" en bas → mini-dialog pour saisir une nouvelle valeur, enregistrée automatiquement
-- Icône crayon à côté → ouvre un panneau qui liste toutes les valeurs perso avec boutons Modifier / Supprimer
-- Suppression : retire de la liste mais ne touche pas aux produits déjà créés avec cette valeur
+On garde la page actuelle mais **uniquement** pour :
+- chercher / scanner un produit ou vin (douchette, caméra, texte)
+- voir les détails, modifier, ajuster la quantité (+/−)
+- les 3 modes restent : Sortie / Entrée / Détails
 
-Appliqué partout : Entrée (produit, animal, fruit, emplacement, unité poids, format étiquette) et Vin (château/domaine, type, couleur, millésime, emplacement).
+→ On retire toute la logique "liste de scans cumulés en masse".
 
-## 2. Millésime & poids
+---
 
-- Millésime : `ManagedSelect` avec valeurs par défaut (année courante − 30 → +1) + ajout libre
-- Poids : champ numérique libre + `ManagedSelect` pour l'unité (g, kg, mL, L, pièce…) avec ajout
+## 2. Nouvelle page Inventaire — `/inventaire`
 
-## 3. Modifier / Supprimer un produit ou un vin
+Une page dédiée au comptage physique du stock.
 
-Sur **Stock** et **Recherche** :
-- Clic sur une ligne → dialog "Détails" avec toutes les infos
-- Boutons **Modifier** (formulaire pré-rempli, même UI que l'entrée) et **Supprimer** (passe `deleted_at` → corbeille)
+### Démarrer une session d'inventaire
+En haut, choix du périmètre :
+- **Catégorie** : Tous / Vins / Produits
+- **Filtre type** (si Produits) : Tous, Saucisson Porc, Saucisson Cerf, Bourguignon, etc. (liste construite depuis `produit` + `animal`)
+- bouton **Démarrer l'inventaire**
 
-Sur les pages **Entrée** et **Vin** :
-- Nouveau bloc "10 dernières entrées" en bas, avec mini-actions Modifier / Supprimer en ligne
+### Pendant la session
+Deux colonnes :
 
-## 4. Sortie rapide
+**Colonne A — À compter** (produits du périmètre, non encore scannés)
+- liste des items en stock (`quantite > 0`) qui n'ont pas encore été scannés dans la session
+- recherche/filtre rapide
 
-Sur Recherche : le toggle "+ Entrée / − Sortie" existe déjà. J'ajoute un 3ᵉ toggle **Détails** : un scan ouvre directement la fiche au lieu d'incrémenter, pour permettre Modifier/Supprimer depuis la douchette.
+**Colonne B — Comptés ✓** (les 5 derniers scans visibles en tête + total)
+- chaque scan ajoute le produit ici
+- **doublon bloqué** : si même `id` déjà scanné → toast "déjà compté" et pas d'ajout
+- possibilité d'ajuster la quantité réelle constatée (différente du stock système)
 
-## 5. Import des anciens QR codes (legacy)
+### Inconnus
+Section **Produits inconnus scannés** : codes scannés qui ne correspondent à rien en base → bouton "Enregistrer ce produit" qui pré-remplit le formulaire d'entrée avec le code.
 
-Deux mécanismes :
+### Fin de session
+Bouton **Terminer & exporter** qui génère une fiche `.csv` :
+- produits comptés (avec écarts stock système / stock réel)
+- produits non comptés (manquants)
+- produits inconnus
 
-**a. Saisie d'ID legacy au moment de l'entrée**
-- Nouvelle case à cocher "J'ai déjà un QR code / une étiquette" sur le formulaire d'entrée
-- Si cochée : un champ "Code existant" remplace la génération auto (`generate_product_code` non appelé, le code saisi/scanné est utilisé tel quel)
-- La case `code` de la BDD accepte n'importe quel format → aucune migration nécessaire, juste une contrainte d'unicité par utilisateur (à ajouter)
+---
 
-**b. Import en masse (Excel/CSV)**
-- Nouvelle page **Import** : on dépose un fichier CSV (colonnes : code, produit, animal/fruit, emplacement, version, bague, date, poids, unité, quantité, notes)
-- Aperçu → bouton "Importer" → bulk insert
-- Format compatible avec un export de ton fichier Excel VBA (je te dirai exactement les colonnes attendues quand tu enverras le fichier)
+## 3. Feuille des sorties — `/sorties`
 
-## 6. EAN / codes-barres
+Nouvelle page qui liste les produits **sortis du stock** (passés à `deleted_at` ou `quantite` diminuée via le mode Sortie).
 
-`@zxing/browser` déjà installé décode déjà EAN-8, EAN-13, UPC-A, UPC-E, Code 128, QR, etc. Pas de changement de lib nécessaire ; je vérifie juste que le `BrowserMultiFormatReader` est bien configuré pour les EAN (par défaut oui). Je teste avec une vraie bouteille.
+- table avec date, produit, code, quantité sortie
+- filtres : période, type
+- export `.csv`
 
-## 7. Vue "10 dernières entrées"
+Source de données : on ajoute une petite table `stock_movements` (id, user_id, item_id, kind product/wine, delta, reason in/out/inventory, created_at) alimentée à chaque ajustement depuis Recherche et Inventaire. Permet aussi de tracer l'historique futur.
 
-Bloc compact en bas de chaque page de saisie :
-- Liste triée `created_at DESC limit 10`
-- Chaque ligne : code/label · qté · emplacement · 🖉 ✕
-- Clic 🖉 → dialog d'édition ; clic ✕ → confirmation puis corbeille
+---
 
-## Technique
+## 4. Menu latéral (AppShell)
 
-**Migrations SQL**
-1. Table `user_options` + RLS + index (user_id, field)
-2. Index unique sur `products.code` par `user_id` (pour éviter doublons à l'import)
-3. Seed : les valeurs actuelles de `constants.ts` ne sont PAS insérées en BDD ; elles restent en fallback côté client (la BDD ne contient que les ajouts perso de l'utilisateur)
+Ajout de deux entrées :
+- **Inventaire** (icône `ClipboardList`)
+- **Sorties** (icône `LogOut`)
 
-**Nouveaux composants**
-- `src/components/ManagedSelect.tsx` (combobox + add + manage)
-- `src/components/ManageOptionsDialog.tsx` (liste éditable d'un `field`)
-- `src/components/ProductEditDialog.tsx`
-- `src/components/WineEditDialog.tsx`
-- `src/components/RecentEntries.tsx`
+---
 
-**Nouvelles routes**
-- `src/routes/_authed/import.tsx` (CSV → preview → bulk insert)
+## Détails techniques
 
-**Pages modifiées**
-- `entree.tsx`, `vin.tsx`, `stock.tsx`, `recherche.tsx`
+- Migration SQL : nouvelle table `stock_movements` avec RLS `auth.uid() = user_id`.
+- Hook commun `useAdjustQuantity` qui met à jour la quantité ET insère un mouvement.
+- État de session d'inventaire local (React state, pas persistant) — si la page est rechargée, la session est perdue. OK pour un premier jet ?
 
-## Ce que je NE fais PAS dans ce lot
+---
 
-- Driver d'impression WiFi QL-810Wc (Phase 2)
-- Modèles .lbx stockés
-- Parser direct du `.xlsm` VBA (CSV d'abord ; je traiterai le `.xlsm` ensuite quand tu l'enverras)
+## Questions avant de lancer
 
-## Confirmation rapide
-
-Avant de coder, deux points :
-1. **Suppression d'une option** dans la liste (ex : tu supprimes "Daim" des animaux) : ça enlève seulement l'option pour les **futures** entrées, les produits existants gardent "Daim". OK ?
-2. **Import legacy** : tu préfères que je commence par le formulaire "code existant à scanner" maintenant, et le CSV d'import en masse quand tu envoies un export de ton Excel ? Ou tout d'un coup ?
+1. **Persistance de la session d'inventaire** : OK qu'elle soit perdue si on recharge la page, ou il faut la sauvegarder en base pour reprendre plus tard ?
+2. **Feuille des sorties** : on remonte uniquement les sorties futures (à partir de maintenant), ou tu veux aussi qu'on essaie de reconstituer l'historique depuis les entrées supprimées (`deleted_at`) ?
