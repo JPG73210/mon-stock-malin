@@ -14,6 +14,7 @@ import { Route as AuthedRouteImport } from './routes/_authed'
 import { Route as AuthedIndexRouteImport } from './routes/_authed/index'
 import { Route as AuthedVinRouteImport } from './routes/_authed/vin'
 import { Route as AuthedStockRouteImport } from './routes/_authed/stock'
+import { Route as AuthedSortiesRouteImport } from './routes/_authed/sorties'
 import { Route as AuthedSauvegardeRouteImport } from './routes/_authed/sauvegarde'
 import { Route as AuthedRechercheRouteImport } from './routes/_authed/recherche'
 import { Route as AuthedInventaireRouteImport } from './routes/_authed/inventaire'
@@ -45,6 +46,11 @@ const AuthedVinRoute = AuthedVinRouteImport.update({
 const AuthedStockRoute = AuthedStockRouteImport.update({
   id: '/stock',
   path: '/stock',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedSortiesRoute = AuthedSortiesRouteImport.update({
+  id: '/sorties',
+  path: '/sorties',
   getParentRoute: () => AuthedRoute,
 } as any)
 const AuthedSauvegardeRoute = AuthedSauvegardeRouteImport.update({
@@ -99,6 +105,7 @@ export interface FileRoutesByFullPath {
   '/inventaire': typeof AuthedInventaireRoute
   '/recherche': typeof AuthedRechercheRoute
   '/sauvegarde': typeof AuthedSauvegardeRoute
+  '/sorties': typeof AuthedSortiesRoute
   '/stock': typeof AuthedStockRoute
   '/vin': typeof AuthedVinRoute
 }
@@ -112,6 +119,7 @@ export interface FileRoutesByTo {
   '/inventaire': typeof AuthedInventaireRoute
   '/recherche': typeof AuthedRechercheRoute
   '/sauvegarde': typeof AuthedSauvegardeRoute
+  '/sorties': typeof AuthedSortiesRoute
   '/stock': typeof AuthedStockRoute
   '/vin': typeof AuthedVinRoute
   '/': typeof AuthedIndexRoute
@@ -128,6 +136,7 @@ export interface FileRoutesById {
   '/_authed/inventaire': typeof AuthedInventaireRoute
   '/_authed/recherche': typeof AuthedRechercheRoute
   '/_authed/sauvegarde': typeof AuthedSauvegardeRoute
+  '/_authed/sorties': typeof AuthedSortiesRoute
   '/_authed/stock': typeof AuthedStockRoute
   '/_authed/vin': typeof AuthedVinRoute
   '/_authed/': typeof AuthedIndexRoute
@@ -145,6 +154,7 @@ export interface FileRouteTypes {
     | '/inventaire'
     | '/recherche'
     | '/sauvegarde'
+    | '/sorties'
     | '/stock'
     | '/vin'
   fileRoutesByTo: FileRoutesByTo
@@ -158,6 +168,7 @@ export interface FileRouteTypes {
     | '/inventaire'
     | '/recherche'
     | '/sauvegarde'
+    | '/sorties'
     | '/stock'
     | '/vin'
     | '/'
@@ -173,6 +184,7 @@ export interface FileRouteTypes {
     | '/_authed/inventaire'
     | '/_authed/recherche'
     | '/_authed/sauvegarde'
+    | '/_authed/sorties'
     | '/_authed/stock'
     | '/_authed/vin'
     | '/_authed/'
@@ -218,6 +230,13 @@ declare module '@tanstack/react-router' {
       path: '/stock'
       fullPath: '/stock'
       preLoaderRoute: typeof AuthedStockRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/sorties': {
+      id: '/_authed/sorties'
+      path: '/sorties'
+      fullPath: '/sorties'
+      preLoaderRoute: typeof AuthedSortiesRouteImport
       parentRoute: typeof AuthedRoute
     }
     '/_authed/sauvegarde': {
@@ -288,6 +307,7 @@ interface AuthedRouteChildren {
   AuthedInventaireRoute: typeof AuthedInventaireRoute
   AuthedRechercheRoute: typeof AuthedRechercheRoute
   AuthedSauvegardeRoute: typeof AuthedSauvegardeRoute
+  AuthedSortiesRoute: typeof AuthedSortiesRoute
   AuthedStockRoute: typeof AuthedStockRoute
   AuthedVinRoute: typeof AuthedVinRoute
   AuthedIndexRoute: typeof AuthedIndexRoute
@@ -302,6 +322,7 @@ const AuthedRouteChildren: AuthedRouteChildren = {
   AuthedInventaireRoute: AuthedInventaireRoute,
   AuthedRechercheRoute: AuthedRechercheRoute,
   AuthedSauvegardeRoute: AuthedSauvegardeRoute,
+  AuthedSortiesRoute: AuthedSortiesRoute,
   AuthedStockRoute: AuthedStockRoute,
   AuthedVinRoute: AuthedVinRoute,
   AuthedIndexRoute: AuthedIndexRoute,
