@@ -27,14 +27,34 @@ function Dashboard() {
     enabled: !!user,
     queryFn: async () => {
       const [p, w, t, wc] = await Promise.all([
-        supabase.from("products").select("quantite").is("deleted_at", null),
-        supabase.from("wines").select("quantite").is("deleted_at", null),
+        supabase.from("products").select("produit, animal, quantite").is("deleted_at", null),
+        supabase.from("wines").select("couleur, quantite").is("deleted_at", null),
         supabase.from("products").select("id", { count: "exact", head: true }).not("deleted_at", "is", null),
         supabase.from("wines").select("id", { count: "exact", head: true }).not("deleted_at", "is", null),
       ]);
-      const products = (p.data ?? []).reduce((s, r: any) => s + (r.quantite ?? 0), 0);
-      const wines = (w.data ?? []).reduce((s, r: any) => s + (r.quantite ?? 0), 0);
-      return { products, wines, trashed: (t.count ?? 0) + (wc.count ?? 0) };
+      const productRows = p.data ?? [];
+      const wineRows = w.data ?? [];
+      const products = productRows.reduce((s, r: any) => s + (r.quantite ?? 0), 0);
+      const wines = wineRows.reduce((s, r: any) => s + (r.quantite ?? 0), 0);
+
+      const rouge = wineRows.filter((r: any) => r.couleur === "Rouge").reduce((s, r: any) => s + (r.quantite ?? 0), 0);
+      const blanc = wineRows.filter((r: any) => r.couleur === "Blanc").reduce((s, r: any) => s + (r.quantite ?? 0), 0);
+      const rose = wineRows.filter((r: any) => r.couleur === "Rosé").reduce((s, r: any) => s + (r.quantite ?? 0), 0);
+
+      const saucissonCerf = productRows.filter((r: any) =>
+        r.produit?.toLowerCase().includes("saucisson") && r.animal?.toLowerCase().includes("cerf")
+      ).reduce((s, r: any) => s + (r.quantite ?? 0), 0);
+      const saucissonPorc = productRows.filter((r: any) =>
+        r.produit?.toLowerCase().includes("saucisson") && r.animal?.toLowerCase().includes("porc")
+      ).reduce((s, r: any) => s + (r.quantite ?? 0), 0);
+      const bourguignon = productRows.filter((r: any) =>
+        r.produit?.toLowerCase().includes("bourguignon")
+      ).reduce((s, r: any) => s + (r.quantite ?? 0), 0);
+
+      return {
+        products, wines, trashed: (t.count ?? 0) + (wc.count ?? 0),
+        rouge, blanc, rose, saucissonCerf, saucissonPorc, bourguignon,
+      };
     },
   });
 
@@ -48,6 +68,24 @@ function Dashboard() {
         <StatCard label="Produits en stock" value={data?.products} icon={Beef} />
         <StatCard label="Bouteilles en cave" value={data?.wines} icon={Wine} />
         <StatCard label="Dans la corbeille" value={data?.trashed} icon={Trash2} />
+      </div>
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Vins par couleur</h2>
+          <div className="grid grid-cols-3 gap-4">
+            <StatCard label="Rouge" value={data?.rouge} icon={Wine} />
+            <StatCard label="Blanc" value={data?.blanc} icon={Wine} />
+            <StatCard label="Rosé" value={data?.rose} icon={Wine} />
+          </div>
+        </div>
+        <div>
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Produits par type</h2>
+          <div className="grid grid-cols-3 gap-4">
+            <StatCard label="Saucisson cerf" value={data?.saucissonCerf} icon={Beef} />
+            <StatCard label="Saucisson porc" value={data?.saucissonPorc} icon={Beef} />
+            <StatCard label="Bourguignon" value={data?.bourguignon} icon={Beef} />
+          </div>
+        </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Link to="/entree" className="rounded-xl border bg-card hover:bg-secondary/60 p-6 flex items-center gap-4 transition">
