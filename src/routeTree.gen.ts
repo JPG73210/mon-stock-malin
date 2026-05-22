@@ -16,6 +16,7 @@ import { Route as AuthedVinRouteImport } from './routes/_authed/vin'
 import { Route as AuthedStockRouteImport } from './routes/_authed/stock'
 import { Route as AuthedSauvegardeRouteImport } from './routes/_authed/sauvegarde'
 import { Route as AuthedRechercheRouteImport } from './routes/_authed/recherche'
+import { Route as AuthedInventaireRouteImport } from './routes/_authed/inventaire'
 import { Route as AuthedImpressionRouteImport } from './routes/_authed/impression'
 import { Route as AuthedImportRouteImport } from './routes/_authed/import'
 import { Route as AuthedEtiquettesRouteImport } from './routes/_authed/etiquettes'
@@ -56,6 +57,11 @@ const AuthedRechercheRoute = AuthedRechercheRouteImport.update({
   path: '/recherche',
   getParentRoute: () => AuthedRoute,
 } as any)
+const AuthedInventaireRoute = AuthedInventaireRouteImport.update({
+  id: '/inventaire',
+  path: '/inventaire',
+  getParentRoute: () => AuthedRoute,
+} as any)
 const AuthedImpressionRoute = AuthedImpressionRouteImport.update({
   id: '/impression',
   path: '/impression',
@@ -90,6 +96,7 @@ export interface FileRoutesByFullPath {
   '/etiquettes': typeof AuthedEtiquettesRoute
   '/import': typeof AuthedImportRoute
   '/impression': typeof AuthedImpressionRoute
+  '/inventaire': typeof AuthedInventaireRoute
   '/recherche': typeof AuthedRechercheRoute
   '/sauvegarde': typeof AuthedSauvegardeRoute
   '/stock': typeof AuthedStockRoute
@@ -102,6 +109,7 @@ export interface FileRoutesByTo {
   '/etiquettes': typeof AuthedEtiquettesRoute
   '/import': typeof AuthedImportRoute
   '/impression': typeof AuthedImpressionRoute
+  '/inventaire': typeof AuthedInventaireRoute
   '/recherche': typeof AuthedRechercheRoute
   '/sauvegarde': typeof AuthedSauvegardeRoute
   '/stock': typeof AuthedStockRoute
@@ -117,6 +125,7 @@ export interface FileRoutesById {
   '/_authed/etiquettes': typeof AuthedEtiquettesRoute
   '/_authed/import': typeof AuthedImportRoute
   '/_authed/impression': typeof AuthedImpressionRoute
+  '/_authed/inventaire': typeof AuthedInventaireRoute
   '/_authed/recherche': typeof AuthedRechercheRoute
   '/_authed/sauvegarde': typeof AuthedSauvegardeRoute
   '/_authed/stock': typeof AuthedStockRoute
@@ -133,6 +142,7 @@ export interface FileRouteTypes {
     | '/etiquettes'
     | '/import'
     | '/impression'
+    | '/inventaire'
     | '/recherche'
     | '/sauvegarde'
     | '/stock'
@@ -145,6 +155,7 @@ export interface FileRouteTypes {
     | '/etiquettes'
     | '/import'
     | '/impression'
+    | '/inventaire'
     | '/recherche'
     | '/sauvegarde'
     | '/stock'
@@ -159,6 +170,7 @@ export interface FileRouteTypes {
     | '/_authed/etiquettes'
     | '/_authed/import'
     | '/_authed/impression'
+    | '/_authed/inventaire'
     | '/_authed/recherche'
     | '/_authed/sauvegarde'
     | '/_authed/stock'
@@ -222,6 +234,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedRechercheRouteImport
       parentRoute: typeof AuthedRoute
     }
+    '/_authed/inventaire': {
+      id: '/_authed/inventaire'
+      path: '/inventaire'
+      fullPath: '/inventaire'
+      preLoaderRoute: typeof AuthedInventaireRouteImport
+      parentRoute: typeof AuthedRoute
+    }
     '/_authed/impression': {
       id: '/_authed/impression'
       path: '/impression'
@@ -266,6 +285,7 @@ interface AuthedRouteChildren {
   AuthedEtiquettesRoute: typeof AuthedEtiquettesRoute
   AuthedImportRoute: typeof AuthedImportRoute
   AuthedImpressionRoute: typeof AuthedImpressionRoute
+  AuthedInventaireRoute: typeof AuthedInventaireRoute
   AuthedRechercheRoute: typeof AuthedRechercheRoute
   AuthedSauvegardeRoute: typeof AuthedSauvegardeRoute
   AuthedStockRoute: typeof AuthedStockRoute
@@ -279,6 +299,7 @@ const AuthedRouteChildren: AuthedRouteChildren = {
   AuthedEtiquettesRoute: AuthedEtiquettesRoute,
   AuthedImportRoute: AuthedImportRoute,
   AuthedImpressionRoute: AuthedImpressionRoute,
+  AuthedInventaireRoute: AuthedInventaireRoute,
   AuthedRechercheRoute: AuthedRechercheRoute,
   AuthedSauvegardeRoute: AuthedSauvegardeRoute,
   AuthedStockRoute: AuthedStockRoute,
@@ -296,3 +317,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
