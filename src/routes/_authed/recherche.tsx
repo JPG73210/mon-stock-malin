@@ -37,7 +37,10 @@ function RecherchePage() {
   async function lookup(text: string) {
     if (!text.trim()) return;
     // Try product code first (extract from QR JSON if needed)
-    let code = text.trim();
+    // Nettoyage : certaines douchettes ajoutent un timestamp/espaces après le code.
+    // On garde uniquement le premier "token" (avant espace/tab/saut de ligne).
+    const raw = text.trim().split(/[\s\r\n]+/)[0] ?? "";
+    let code = raw;
     try {
       const parsed = JSON.parse(text);
       if (parsed.id) code = parsed.id;
@@ -60,8 +63,14 @@ function RecherchePage() {
       addHit({ id: prod.id, kind: "product", label: prod.produit, sub: `${prod.code} · ${prod.emplacement}`, raw: prod });
       return;
     }
-    // search wine by barcode
-    const { data: wine } = await supabase.from("wines").select("*").eq("code_barre", text.trim()).is("deleted_at", null).maybeSingle();
+    // search wine by barcode (essai sur le code nettoyé ET sur les chiffres uniquement)
+    const digitsOnly = raw.replace(/\D/g, "");
+    const barcodeCandidates = Array.from(new Set([raw, digitsOnly].filter(Boolean)));
+    let wine: any = null;
+    for (const candidate of barcodeCandidates) {
+      const { data } = await supabase.from("wines").select("*").eq("code_barre", candidate).is("deleted_at", null).maybeSingle();
+      if (data) { wine = data; break; }
+    }
     if (wine) {
       if (mode === "details") { setEditWine(wine); return; }
       addHit({ id: wine.id, kind: "wine", label: wine.chateau ?? "Vin", sub: `${wine.type_vin} ${wine.millesime ?? ""}`.trim(), raw: wine });
