@@ -1,7 +1,7 @@
 import { Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import {
   Beef, Wine, Search, Trash2, LayoutDashboard, PackagePlus, LogOut, Menu, X, Upload,
-  Printer, Tags,
+  Printer, Tags, Save,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ const NAV = [
   { to: "/etiquettes", label: "Modèles d'étiquettes", icon: Tags },
   { to: "/impression", label: "Impression", icon: Printer },
   { to: "/import", label: "Import CSV", icon: Upload },
+  { to: "/sauvegarde", label: "Sauvegarde", icon: Save },
   { to: "/corbeille", label: "Corbeille", icon: Trash2 },
 ] as const;
 
