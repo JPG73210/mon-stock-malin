@@ -112,6 +112,19 @@ function RecherchePage() {
     mutationFn: async ({ hit, delta }: { hit: Hit; delta: number }) => {
       const table = hit.kind === "product" ? "products" : "wines";
       const newQty = Math.max(0, (hit.raw.quantite ?? 0) + delta);
+      const { data: { user } } = await supabase.auth.getUser();
+      // Log movement
+      if (user) {
+        await supabase.from("stock_movements").insert({
+          user_id: user.id,
+          kind: hit.kind,
+          item_id: hit.id,
+          label: hit.label,
+          code: hit.kind === "product" ? hit.raw.code : hit.raw.code_barre,
+          delta,
+          reason: delta > 0 ? "in" : "out",
+        });
+      }
       if (newQty === 0) {
         const { error } = await supabase.from(table).update({ deleted_at: new Date().toISOString() }).eq("id", hit.id);
         if (error) throw error;
@@ -125,6 +138,7 @@ function RecherchePage() {
       qc.invalidateQueries({ queryKey: ["products"] });
       qc.invalidateQueries({ queryKey: ["wines"] });
       qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
+      qc.invalidateQueries({ queryKey: ["stock-movements"] });
       if (r.removed) {
         setHits((p) => p.filter((h) => h.id !== vars.hit.id));
         toast.success("Quantité épuisée → corbeille");
