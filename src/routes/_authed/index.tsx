@@ -95,9 +95,12 @@ function Dashboard() {
 
   return (
     <div className="p-6 md:p-8 space-y-8 max-w-6xl">
-      <div>
-        <h1 className="text-3xl font-bold">Bonjour 👋</h1>
-        <p className="text-muted-foreground">Vue d'ensemble de votre stock.</p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-3xl font-bold">Bonjour 👋</h1>
+          <p className="text-muted-foreground">Vue d'ensemble de votre stock.</p>
+        </div>
+        <PrinterStatus />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard label="Produits en stock" value={data?.products} icon={Beef} />
