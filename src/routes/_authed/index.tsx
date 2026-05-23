@@ -1,12 +1,47 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Beef, Wine, Search, Trash2, PackagePlus } from "lucide-react";
+import { Beef, Wine, Search, Trash2, PackagePlus, Printer } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authed/")({
   component: Dashboard,
 });
+
+function PrinterStatus() {
+  const { user } = useAuth();
+  const { data } = useQuery({
+    queryKey: ["agent-status", user?.id],
+    enabled: !!user,
+    refetchInterval: 10000,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("agent_status")
+        .select("status, last_seen, printer_ip")
+        .eq("id", "print-agent")
+        .maybeSingle();
+      return data;
+    },
+  });
+
+  const ageSec = data?.last_seen
+    ? (Date.now() - new Date(data.last_seen).getTime()) / 1000
+    : Infinity;
+  const online = data?.status === "online" && ageSec < 60;
+
+  return (
+    <div className="flex items-center gap-2 rounded-full border bg-card px-3 py-1.5 text-sm shadow-sm">
+      <Printer className={cn("h-4 w-4", online ? "text-green-600" : "text-red-600")} />
+      <span className={cn("h-2 w-2 rounded-full", online ? "bg-green-500" : "bg-red-500")} />
+      <span className="text-muted-foreground">
+        {online
+          ? `Imprimante en ligne${data?.printer_ip ? ` · ${data.printer_ip}` : ""}`
+          : "Imprimante hors ligne"}
+      </span>
+    </div>
+  );
+}
 
 function StatCard({ label, value, icon: Icon }: any) {
   return (
@@ -60,9 +95,12 @@ function Dashboard() {
 
   return (
     <div className="p-6 md:p-8 space-y-8 max-w-6xl">
-      <div>
-        <h1 className="text-3xl font-bold">Bonjour 👋</h1>
-        <p className="text-muted-foreground">Vue d'ensemble de votre stock.</p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-3xl font-bold">Bonjour 👋</h1>
+          <p className="text-muted-foreground">Vue d'ensemble de votre stock.</p>
+        </div>
+        <PrinterStatus />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard label="Produits en stock" value={data?.products} icon={Beef} />
