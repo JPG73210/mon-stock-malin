@@ -10,17 +10,17 @@ import { cn } from "@/lib/utils";
 
 const NAV = [
   { to: "/", label: "Tableau de bord", icon: LayoutDashboard },
+  { to: "/stock", label: "Stock", icon: Beef },
   { to: "/entree", label: "Entrée Viande/Légumes", icon: PackagePlus },
   { to: "/vin", label: "Entrée Vin", icon: Wine },
-  { to: "/stock", label: "Stock", icon: Beef },
   { to: "/recherche", label: "Recherche", icon: Search },
   { to: "/inventaire", label: "Inventaire", icon: ClipboardList },
-  { to: "/sorties", label: "Sorties", icon: ArrowLeftRight },
   { to: "/etiquettes", label: "Modèles d'étiquettes", icon: Tags },
   { to: "/impression", label: "Impression", icon: Printer },
   { to: "/import", label: "Import CSV", icon: Upload },
   { to: "/sauvegarde", label: "Sauvegarde", icon: Save },
   { to: "/corbeille", label: "Corbeille", icon: Trash2 },
+  { to: "/sorties", label: "Sorties de stock", icon: ArrowLeftRight },
 ] as const;
 
 export function AppShell() {
