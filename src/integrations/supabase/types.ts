@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      agent_status: {
+        Row: {
+          id: string
+          last_seen: string
+          printer_ip: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          last_seen?: string
+          printer_ip?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          last_seen?: string
+          printer_ip?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       label_templates: {
         Row: {
           created_at: string
