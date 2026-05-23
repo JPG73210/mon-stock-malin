@@ -1,122 +1,48 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { ManagedSelect } from "@/components/ManagedSelect";
-import { Trash2, Upload as UploadIcon, FileImage } from "lucide-react";
-import { useState } from "react";
-import { toast } from "sonner";
+import { LabelPreviewInline } from "@/components/LabelPreviewInline";
+import { ETIQUETTE_FORMATS } from "@/lib/constants";
+import { rollSpec } from "@/lib/print";
 
 export const Route = createFileRoute("/_authed/etiquettes")({
   component: EtiquettesPage,
 });
 
+const DEMO = {
+  id: "25-SP-001",
+  produit: "Saucisson",
+  animal: "Porc",
+  fruit: "",
+  bague: "FR123456",
+  date: "2025-11",
+  poids: 250,
+  unite: "Gr",
+};
+
 function EtiquettesPage() {
-  const qc = useQueryClient();
-  const [name, setName] = useState("");
-  const [format, setFormat] = useState("30x62");
-  const [file, setFile] = useState<File | null>(null);
-
-  const { data: templates = [] } = useQuery({
-    queryKey: ["label-templates"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("label_templates")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  const upload = useMutation({
-    mutationFn: async () => {
-      if (!name) throw new Error("Nom requis");
-      if (!file) throw new Error("Fichier requis");
-      const { data: user } = await supabase.auth.getUser();
-      if (!user.user) throw new Error("Non authentifié");
-      const path = `${user.user.id}/${crypto.randomUUID()}-${file.name}`;
-      const up = await supabase.storage.from("label-templates").upload(path, file);
-      if (up.error) throw up.error;
-      const { error } = await supabase.from("label_templates").insert({
-        user_id: user.user.id, name, format, file_url: path,
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["label-templates"] });
-      toast.success("Modèle enregistré");
-      setName(""); setFile(null);
-    },
-    onError: (e: any) => toast.error(e.message ?? "Erreur"),
-  });
-
-  const del = useMutation({
-    mutationFn: async (t: any) => {
-      if (t.file_url) await supabase.storage.from("label-templates").remove([t.file_url]);
-      const { error } = await supabase.from("label_templates").delete().eq("id", t.id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["label-templates"] });
-      toast.success("Modèle supprimé");
-    },
-    onError: (e: any) => toast.error(e.message ?? "Erreur"),
-  });
-
-  async function download(t: any) {
-    const { data, error } = await supabase.storage.from("label-templates").createSignedUrl(t.file_url, 60);
-    if (error) return toast.error(error.message);
-    window.open(data.signedUrl, "_blank");
-  }
+  const formats = ETIQUETTE_FORMATS.filter((f) => f !== "Pas d'étiquettes");
 
   return (
     <div className="p-6 md:p-8 max-w-5xl">
       <h1 className="text-3xl font-bold mb-2">Modèles d'étiquettes</h1>
-      <p className="text-muted-foreground mb-6">Stockez vos modèles (PNG, PDF, .lbx Brother) par format.</p>
+      <p className="text-muted-foreground mb-6">
+        Aperçu de tous les formats disponibles avec un produit fictif. Les modèles se mettent à jour automatiquement.
+      </p>
 
-      <div className="border rounded-lg p-4 mb-6 space-y-3 bg-card">
-        <h2 className="font-semibold">Ajouter un modèle</h2>
-        <div className="grid md:grid-cols-3 gap-3">
-          <div>
-            <Label>Nom</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex : Vin chateau standard" />
-          </div>
-          <div>
-            <Label>Format</Label>
-            <ManagedSelect field="etiquette_format" value={format} onChange={setFormat} />
-          </div>
-          <div>
-            <Label>Fichier</Label>
-            <Input type="file" accept=".lbx,.png,.jpg,.jpeg,.pdf" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
-          </div>
-        </div>
-        <Button onClick={() => upload.mutate()} disabled={upload.isPending}>
-          <UploadIcon className="mr-2 h-4 w-4" /> Téléverser
-        </Button>
-      </div>
-
-      <div className="space-y-2">
-        {templates.length === 0 && <p className="text-muted-foreground text-sm">Aucun modèle pour l'instant.</p>}
-        {templates.map((t: any) => (
-          <div key={t.id} className="flex items-center justify-between border rounded-md p-3">
-            <div className="flex items-center gap-3">
-              <FileImage className="h-5 w-5 text-muted-foreground" />
+      <div className="grid gap-6 sm:grid-cols-2">
+        {formats.map((fmt) => {
+          const spec = rollSpec(fmt);
+          return (
+            <div key={fmt} className="rounded-xl border bg-card p-4 space-y-3">
               <div>
-                <p className="font-medium">{t.name}</p>
-                <p className="text-xs text-muted-foreground">Format {t.format}</p>
+                <p className="font-semibold">{spec.label}</p>
+                <p className="text-xs text-muted-foreground">{spec.dk} · {spec.mediaWidth}×{spec.mediaHeight} mm</p>
+              </div>
+              <div className="flex justify-center bg-muted/30 rounded p-3">
+                <LabelPreviewInline fmt={fmt} data={DEMO} scale={5} />
               </div>
             </div>
-            <div className="flex gap-2">
-              <Button size="sm" variant="outline" onClick={() => download(t)}>Voir</Button>
-              <Button size="sm" variant="ghost" onClick={() => del.mutate(t)}>
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

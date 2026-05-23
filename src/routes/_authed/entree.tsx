@@ -12,12 +12,12 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { QrCode } from "@/components/QrCode";
 import { ManagedSelect } from "@/components/ManagedSelect";
 import { RecentEntries } from "@/components/RecentEntries";
 import { CameraScanner } from "@/components/CameraScanner";
-import { printLabelAirprint, enqueuePrintJob, downloadLabelPdf } from "@/lib/print";
-import { Camera, Printer, Save, X, Send, Download } from "lucide-react";
+import { LabelPreviewInline } from "@/components/LabelPreviewInline";
+import { enqueuePrintJob } from "@/lib/print";
+import { Camera, Printer, X } from "lucide-react";
 
 export const Route = createFileRoute("/_authed/entree")({ component: EntreePage });
 
@@ -42,7 +42,7 @@ type Form = {
 const empty: Form = {
   emplacement: "Congélateur à Tiroir Garage",
   date_creation: new Date().toISOString().slice(0, 7),
-  version: "V1", bague: "", produit: "", animal: "", fruit: "",
+  version: "", bague: "", produit: "", animal: "", fruit: "",
   quantite: 1, poids: "", unite_poids: "Gr",
   etiquette_format: "Pas d'étiquettes",
   needs_label: false, notes: "",
@@ -56,14 +56,14 @@ function EntreePage() {
   const [scanLegacy, setScanLegacy] = useState(false);
 
   const save = useMutation({
-    mutationFn: async (mode: "none" | "airprint" | "agent" | "download") => {
+    mutationFn: async () => {
       if (!user) throw new Error("Non connecté");
       if (!f.produit) throw new Error("Le produit est obligatoire");
       const dateFull = `${f.date_creation}-01`;
       let code: string;
       if (f.use_legacy) {
         if (!f.legacy_code.trim()) throw new Error("Code existant requis");
-        code = f.legacy_code.trim();
+        code = f.legacy_code.trim().toUpperCase();
       } else {
         const { data: codeData, error: codeErr } = await supabase.rpc("generate_product_code", {
           _user_id: user.id, _date: dateFull,
@@ -76,7 +76,7 @@ function EntreePage() {
       const { error } = await supabase.from("products").insert({
         user_id: user.id, code,
         emplacement: f.emplacement, date_creation: dateFull,
-        version: f.version, bague: f.bague || null,
+        version: f.version || null, bague: f.bague || null,
         produit: f.produit, animal: f.animal || null, fruit: f.fruit || null,
         quantite: f.quantite,
         poids: f.poids ? Number(f.poids) : null, unite_poids: f.unite_poids,
@@ -87,62 +87,35 @@ function EntreePage() {
         if (String(error.message).includes("duplicate")) throw new Error("Ce code existe déjà");
         throw error;
       }
-      return { code, mode };
+      // File d'impression si étiquette demandée
+      if (needsLabel) {
+        const data = {
+          id: code, produit: f.produit, animal: f.animal, fruit: f.fruit,
+          bague: f.bague, date: f.date_creation,
+          poids: f.poids, unite: f.unite_poids,
+        };
+        try { await enqueuePrintJob(f.etiquette_format, data, f.quantite); } catch {}
+      }
+      return { code, needsLabel };
     },
-    onSuccess: async ({ code, mode }) => {
+    onSuccess: async ({ code, needsLabel }) => {
       qc.invalidateQueries({ queryKey: ["products"] });
       qc.invalidateQueries({ queryKey: ["recent-products"] });
       qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
       qc.invalidateQueries({ queryKey: ["print-jobs"] });
-      toast.success(`Produit ${code} enregistré × ${f.quantite}`);
-      if (mode === "airprint") await printLabel(code);
-      if (mode === "agent") await sendToAgent(code);
-      if (mode === "download") await downloadPdf(code);
-      setF(empty);
+      toast.success(`Produit ${code} enregistré${needsLabel ? ` · ${f.quantite} étiquette(s) envoyée(s) à l'imprimante` : ""}`);
+      // Reset uniquement quantité et poids
+      setF((p) => ({ ...p, quantite: 1, poids: "" }));
     },
     onError: (e: any) => toast.error(e.message ?? "Erreur"),
   });
 
-  async function printLabel(code: string) {
-    const data = {
-      id: code, produit: f.produit, animal: f.animal, fruit: f.fruit,
-      bague: f.bague, date: f.date_creation,
-      poids: f.poids, unite: f.unite_poids,
-    };
-    try {
-      await printLabelAirprint(f.etiquette_format, data, f.quantite);
-    } catch (e: any) {
-      toast.error(e.message ?? "Erreur PDF");
-    }
-  }
-
-  async function sendToAgent(code: string) {
-    const data = {
-      id: code, produit: f.produit, animal: f.animal, fruit: f.fruit,
-      bague: f.bague, date: f.date_creation,
-      poids: f.poids, unite: f.unite_poids,
-    };
-    try {
-      await enqueuePrintJob(f.etiquette_format, data, f.quantite);
-      toast.success("Envoyé à l'agent d'impression");
-    } catch (e: any) {
-      toast.error(e.message ?? "Erreur file");
-    }
-  }
-
-  async function downloadPdf(code: string) {
-    const data = {
-      id: code, produit: f.produit, animal: f.animal, fruit: f.fruit,
-      bague: f.bague, date: f.date_creation,
-      poids: f.poids, unite: f.unite_poids,
-    };
-    try {
-      await downloadLabelPdf(f.etiquette_format, data, f.quantite);
-      toast.success("PDF téléchargé");
-    } catch (e: any) {
-      toast.error(e.message ?? "Erreur PDF");
-    }
-  }
+  const labelData = {
+    id: f.use_legacy ? (f.legacy_code || "—") : "AA-XXX",
+    produit: f.produit, animal: f.animal, fruit: f.fruit,
+    bague: f.bague, date: f.date_creation,
+    poids: f.poids, unite: f.unite_poids,
+  };
 
   return (
     <div className="p-6 md:p-8 max-w-5xl">
@@ -159,7 +132,7 @@ function EntreePage() {
             <div className="space-y-2">
               <Label className="text-xs">Code existant</Label>
               <div className="flex gap-2">
-                <Input value={f.legacy_code} onChange={(e) => setF({ ...f, legacy_code: e.target.value })}
+                <Input value={f.legacy_code} onChange={(e) => setF({ ...f, legacy_code: e.target.value.toUpperCase() })}
                   placeholder="Scanner ou saisir l'ID de l'étiquette" />
                 <Button type="button" variant="outline" size="icon" onClick={() => setScanLegacy(!scanLegacy)}>
                   {scanLegacy ? <X className="h-4 w-4" /> : <Camera className="h-4 w-4" />}
@@ -170,7 +143,7 @@ function EntreePage() {
                   onScan={(t) => {
                     let v = t;
                     try { const p = JSON.parse(t); if (p.id) v = p.id; } catch {}
-                    setF((p) => ({ ...p, legacy_code: v })); setScanLegacy(false);
+                    setF((p) => ({ ...p, legacy_code: v.toUpperCase() })); setScanLegacy(false);
                     toast.success("Code lu : " + v);
                   }}
                   onClose={() => setScanLegacy(false)}
@@ -190,7 +163,7 @@ function EntreePage() {
               <ManagedSelect field="version" value={f.version} onChange={(v) => setF({ ...f, version: v })} allowEmpty />
             </Field>
             <Field label="N° Bague / Marque">
-              <Input value={f.bague} onChange={(e) => setF({ ...f, bague: e.target.value })} placeholder="ex: FR123456" />
+              <Input value={f.bague} onChange={(e) => setF({ ...f, bague: e.target.value.toUpperCase() })} placeholder="ex: FR123456" />
             </Field>
             <Field label="Produit *">
               <ManagedSelect field="produit" value={f.produit} onChange={(v) => setF({ ...f, produit: v })} placeholder="Steak, Filet, Tomate…" />
@@ -227,36 +200,28 @@ function EntreePage() {
           <Field label="Notes">
             <Textarea value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} rows={2} />
           </Field>
+
+          <div className="pt-2">
+            <p className="text-sm font-medium mb-2">Aperçu de l'étiquette qui sera imprimée</p>
+            <LabelPreviewInline fmt={f.etiquette_format} data={labelData} />
+          </div>
+
           <div className="flex flex-wrap gap-2 pt-2">
-            <Button onClick={() => save.mutate("none")} disabled={save.isPending}>
-              <Save className="mr-2 h-4 w-4" /> Enregistrer
+            <Button onClick={() => save.mutate()} disabled={save.isPending} className="flex-1 sm:flex-none">
+              <Printer className="mr-2 h-4 w-4" /> Enregistrer et imprimer
             </Button>
-            <Button variant="secondary" onClick={() => save.mutate("airprint")}
-              disabled={save.isPending || f.etiquette_format === "Pas d'étiquettes"}>
-              <Printer className="mr-2 h-4 w-4" /> Enregistrer &amp; AirPrint
-            </Button>
-            <Button variant="outline" onClick={() => save.mutate("agent")}
-              disabled={save.isPending || f.etiquette_format === "Pas d'étiquettes"}
-              title="Envoyer à la file d'impression de l'agent local">
-              <Send className="mr-2 h-4 w-4" /> Enregistrer &amp; envoyer à l'agent
-            </Button>
-            <Button variant="outline" onClick={() => save.mutate("download")}
-              disabled={save.isPending || f.etiquette_format === "Pas d'étiquettes"}
-              title="Enregistrer puis télécharger le PDF de l'étiquette">
-              <Download className="mr-2 h-4 w-4" /> Enregistrer &amp; télécharger PDF
-            </Button>
-            <Button variant="ghost" onClick={() => setF(empty)}>Réinitialiser</Button>
           </div>
         </div>
 
         <div className="rounded-xl border bg-card p-6 space-y-3">
           <p className="text-sm font-medium">Aperçu QR code</p>
-          <QrCode value={JSON.stringify({
-            produit: f.produit, animal: f.animal, fruit: f.fruit,
-            bague: f.bague, date: f.date_creation,
-            poids: f.poids, unite: f.unite_poids,
-          })} size={160} />
-          <p className="text-xs text-muted-foreground">
+          <div className="text-xs text-muted-foreground space-y-1">
+            <p>Produit&nbsp;: {f.produit || "—"}</p>
+            <p>Animal&nbsp;: {f.animal || "—"}</p>
+            <p>Fruit/Lég.&nbsp;: {f.fruit || "—"}</p>
+            <p>Date&nbsp;: {f.date_creation}</p>
+          </div>
+          <p className="text-xs text-muted-foreground border-t pt-3">
             {f.use_legacy ? "L'ID utilisé sera le code existant scanné." : "L'ID définitif sera attribué à l'enregistrement."}
           </p>
         </div>

@@ -285,12 +285,14 @@ export type Database = {
         Row: {
           chateau: string | null
           code_barre: string | null
+          comme_racheter: boolean
           couleur: string | null
           created_at: string
           deleted_at: string | null
           emplacement: string | null
           favori: boolean
           id: string
+          medailles: string[] | null
           millesime: number | null
           notes: string | null
           photo_url: string | null
@@ -303,12 +305,14 @@ export type Database = {
         Insert: {
           chateau?: string | null
           code_barre?: string | null
+          comme_racheter?: boolean
           couleur?: string | null
           created_at?: string
           deleted_at?: string | null
           emplacement?: string | null
           favori?: boolean
           id?: string
+          medailles?: string[] | null
           millesime?: number | null
           notes?: string | null
           photo_url?: string | null
@@ -321,12 +325,14 @@ export type Database = {
         Update: {
           chateau?: string | null
           code_barre?: string | null
+          comme_racheter?: boolean
           couleur?: string | null
           created_at?: string
           deleted_at?: string | null
           emplacement?: string | null
           favori?: boolean
           id?: string
+          medailles?: string[] | null
           millesime?: number | null
           notes?: string | null
           photo_url?: string | null
