@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Beef, Wine, Search, Trash2, PackagePlus, Printer } from "lucide-react";
+import { Beef, Wine, Search, Trash2, PackagePlus, Printer, Loader2 } from "lucide-react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -11,7 +12,8 @@ export const Route = createFileRoute("/_authed/")({
 
 function PrinterStatus() {
   const { user } = useAuth();
-  const { data } = useQuery({
+  const [starting, setStarting] = useState(false);
+  const { data, refetch } = useQuery({
     queryKey: ["agent-status", user?.id],
     enabled: !!user,
     refetchInterval: 10000,
@@ -30,16 +32,48 @@ function PrinterStatus() {
     : Infinity;
   const online = data?.status === "online" && ageSec < 60;
 
+  const handleStartAgent = async () => {
+    if (online || starting) return;
+    setStarting(true);
+    try {
+      await fetch("https://serpolet.eu/api/webhook/start_print_agent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      // attendre quelques secondes puis rafraîchir le statut
+      setTimeout(() => {
+        refetch();
+        setStarting(false);
+      }, 5000);
+    } catch {
+      setStarting(false);
+    }
+  };
+
   return (
-    <div className="flex items-center gap-2 rounded-full border bg-card px-3 py-1.5 text-sm shadow-sm">
-      <Printer className={cn("h-4 w-4", online ? "text-green-600" : "text-red-600")} />
+    <button
+      onClick={handleStartAgent}
+      disabled={online || starting}
+      className={cn(
+        "flex items-center gap-2 rounded-full border bg-card px-3 py-1.5 text-sm shadow-sm transition",
+        !online && !starting && "cursor-pointer hover:bg-secondary/60 active:scale-95"
+      )}
+      title={online ? "Imprimante en ligne" : "Cliquer pour démarrer l'agent d'impression"}
+    >
+      {starting ? (
+        <Loader2 className="h-4 w-4 animate-spin text-amber-500" />
+      ) : (
+        <Printer className={cn("h-4 w-4", online ? "text-green-600" : "text-red-600")} />
+      )}
       <span className={cn("h-2 w-2 rounded-full", online ? "bg-green-500" : "bg-red-500")} />
       <span className="text-muted-foreground">
-        {online
+        {starting
+          ? "Démarrage en cours…"
+          : online
           ? `Imprimante en ligne${data?.printer_ip ? ` · ${data.printer_ip}` : ""}`
           : "Imprimante hors ligne"}
       </span>
-    </div>
+    </button>
   );
 }
 
