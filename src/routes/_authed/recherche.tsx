@@ -5,11 +5,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { QrCode as QrIcon, Barcode, X, Minus, Plus, Trash2, Pencil } from "lucide-react";
+import { QrCode as QrIcon, Barcode, X, Trash2, Medal } from "lucide-react";
 import { CameraScanner } from "@/components/CameraScanner";
 import { ProductEditDialog } from "@/components/ProductEditDialog";
 import { WineEditDialog } from "@/components/WineEditDialog";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authed/recherche")({ component: RecherchePage });
 
@@ -19,7 +21,14 @@ type Hit = {
   label: string;
   sub: string;
   raw: any;
+  photoUrl?: string | null;
   scannedAt: number;
+};
+
+const MEDAL_COLORS: Record<string, string> = {
+  or: "text-yellow-500",
+  argent: "text-zinc-400",
+  bronze: "text-amber-700",
 };
 
 function RecherchePage() {
@@ -27,7 +36,7 @@ function RecherchePage() {
   const [input, setInput] = useState("");
   const [scanning, setScanning] = useState<"qr" | "barcode" | null>(null);
   const [hits, setHits] = useState<Hit[]>([]);
-  const [mode, setMode] = useState<"in" | "out" | "details">("out");
+  const [checked, setChecked] = useState<Set<string>>(new Set());
   const [editProduct, setEditProduct] = useState<any | null>(null);
   const [editWine, setEditWine] = useState<any | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -36,34 +45,30 @@ function RecherchePage() {
 
   async function lookup(text: string) {
     if (!text.trim()) return;
-    // Try product code first (extract from QR JSON if needed)
-    // Nettoyage : certaines douchettes ajoutent un timestamp/espaces après le code.
-    // On garde uniquement le premier "token" (avant espace/tab/saut de ligne).
     const raw = text.trim().split(/[\s\r\n]+/)[0] ?? "";
     let code = raw;
     try {
       const parsed = JSON.parse(text);
       if (parsed.id) code = parsed.id;
     } catch {
-      // Ancien format pipe-séparé : "SP0013||Saucisson|Porc|1|||01/01/2026|"
       if (code.includes("|")) code = code.split("|")[0].trim();
     }
-    // Normalise au format legacy "AA0000" (2 lettres + 4 chiffres) si présent
     const legacy = code.toUpperCase().match(/[A-Z]{2}\d{4}/);
     if (legacy) code = legacy[0];
 
-    // search products by code, then by ancien_code (anciens QR)
-    let { data: prod } = await supabase.from("products").select("*").eq("code", code).is("deleted_at", null).maybeSingle();
-    if (!prod) {
-      const r = await supabase.from("products").select("*").eq("ancien_code", code).is("deleted_at", null).maybeSingle();
-      prod = r.data;
+    // Cherche par code (maj.), puis par maj./min. pour anciennes étiquettes
+    const tries = Array.from(new Set([code, code.toUpperCase(), code.toLowerCase()]));
+    for (const c of tries) {
+      let { data: prod } = await supabase.from("products").select("*").eq("code", c).is("deleted_at", null).maybeSingle();
+      if (!prod) {
+        const r = await supabase.from("products").select("*").eq("ancien_code", c).is("deleted_at", null).maybeSingle();
+        prod = r.data;
+      }
+      if (prod) {
+        addHit({ id: prod.id, kind: "product", label: prod.produit, sub: `${prod.code} · ${prod.emplacement}`, raw: prod });
+        return;
+      }
     }
-    if (prod) {
-      if (mode === "details") { setEditProduct(prod); return; }
-      addHit({ id: prod.id, kind: "product", label: prod.produit, sub: `${prod.code} · ${prod.emplacement}`, raw: prod });
-      return;
-    }
-    // search wine by barcode (essai sur le code nettoyé ET sur les chiffres uniquement)
     const digitsOnly = raw.replace(/\D/g, "");
     const barcodeCandidates = Array.from(new Set([raw, digitsOnly].filter(Boolean)));
     let wine: any = null;
@@ -72,11 +77,15 @@ function RecherchePage() {
       if (data) { wine = data; break; }
     }
     if (wine) {
-      if (mode === "details") { setEditWine(wine); return; }
-      addHit({ id: wine.id, kind: "wine", label: wine.chateau ?? "Vin", sub: `${wine.type_vin} ${wine.millesime ?? ""}`.trim(), raw: wine });
+      let photoUrl: string | null = null;
+      if (wine.photo_url) {
+        const { data } = await supabase.storage.from("wine-photos").createSignedUrl(wine.photo_url, 600);
+        photoUrl = data?.signedUrl ?? null;
+      }
+      addHit({ id: wine.id, kind: "wine", label: wine.chateau ?? "Vin", sub: `${wine.type_vin ?? ""} ${wine.millesime ?? ""}`.trim(), raw: wine, photoUrl });
       return;
     }
-    // Recherche texte : produit / animal / fruit (stock en cours uniquement)
+    // Recherche texte
     const term = text.trim();
     const like = `%${term}%`;
     const { data: matches } = await supabase
@@ -84,16 +93,13 @@ function RecherchePage() {
       .select("*")
       .is("deleted_at", null)
       .gt("quantite", 0)
-      .or(`produit.ilike.${like},animal.ilike.${like},fruit.ilike.${like}`)
+      .or(`produit.ilike.${like},animal.ilike.${like},fruit.ilike.${like},code.ilike.${like}`)
       .order("produit", { ascending: true })
       .limit(20);
     if (matches && matches.length > 0) {
-      if (mode === "details" && matches.length === 1) { setEditProduct(matches[0]); return; }
       for (const m of matches) {
         addHit({
-          id: m.id,
-          kind: "product",
-          label: m.produit,
+          id: m.id, kind: "product", label: m.produit,
           sub: [m.animal, m.fruit, m.code, m.emplacement].filter(Boolean).join(" · "),
           raw: m,
         });
@@ -106,85 +112,67 @@ function RecherchePage() {
 
   function addHit(h: Omit<Hit, "scannedAt">) {
     setHits((prev) => [{ ...h, scannedAt: Date.now() }, ...prev.filter((x) => x.id !== h.id)]);
+    setChecked((s) => { const n = new Set(s); n.add(h.id); return n; });
   }
 
-  const adjustQty = useMutation({
-    mutationFn: async ({ hit, delta }: { hit: Hit; delta: number }) => {
-      const table = hit.kind === "product" ? "products" : "wines";
-      const newQty = Math.max(0, (hit.raw.quantite ?? 0) + delta);
+  function toggleCheck(id: string) {
+    setChecked((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  }
+
+  const sortirSelection = useMutation({
+    mutationFn: async () => {
+      const items = hits.filter((h) => checked.has(h.id));
+      if (items.length === 0) throw new Error("Aucun produit sélectionné");
       const { data: { user } } = await supabase.auth.getUser();
-      // Log movement
-      if (user) {
+      if (!user) throw new Error("Non connecté");
+      for (const h of items) {
+        const table = h.kind === "product" ? "products" : "wines";
+        const newQty = Math.max(0, (h.raw.quantite ?? 0) - 1);
         await supabase.from("stock_movements").insert({
-          user_id: user.id,
-          kind: hit.kind,
-          item_id: hit.id,
-          label: hit.label,
-          code: hit.kind === "product" ? hit.raw.code : hit.raw.code_barre,
-          delta,
-          reason: delta > 0 ? "in" : "out",
+          user_id: user.id, kind: h.kind, item_id: h.id,
+          label: h.label, code: h.kind === "product" ? h.raw.code : h.raw.code_barre,
+          delta: -1, reason: "out",
         });
+        if (newQty === 0) {
+          await supabase.from(table).update({ deleted_at: new Date().toISOString() }).eq("id", h.id);
+        } else {
+          await supabase.from(table).update({ quantite: newQty }).eq("id", h.id);
+        }
       }
-      if (newQty === 0) {
-        const { error } = await supabase.from(table).update({ deleted_at: new Date().toISOString() }).eq("id", hit.id);
-        if (error) throw error;
-        return { removed: true };
-      }
-      const { error } = await supabase.from(table).update({ quantite: newQty }).eq("id", hit.id);
-      if (error) throw error;
-      return { removed: false, newQty };
+      return items.length;
     },
-    onSuccess: (r, vars) => {
+    onSuccess: (n) => {
       qc.invalidateQueries({ queryKey: ["products"] });
       qc.invalidateQueries({ queryKey: ["wines"] });
       qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
       qc.invalidateQueries({ queryKey: ["stock-movements"] });
-      if (r.removed) {
-        setHits((p) => p.filter((h) => h.id !== vars.hit.id));
-        toast.success("Quantité épuisée → corbeille");
-      } else {
-        setHits((p) => p.map((h) => h.id === vars.hit.id ? { ...h, raw: { ...h.raw, quantite: r.newQty } } : h));
-        toast.success("Quantité mise à jour");
-      }
+      toast.success(`${n} produit(s) sorti(s) du stock`);
+      setHits((p) => p.filter((h) => !checked.has(h.id)));
+      setChecked(new Set());
     },
+    onError: (e: any) => toast.error(e.message ?? "Erreur"),
   });
-
-  function onScan(text: string) {
-    if (mode === "in") {
-      // increment if known, else just lookup
-      lookup(text);
-    } else {
-      lookup(text);
-    }
-  }
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    onScan(input);
+    lookup(input);
     setInput("");
   }
 
   return (
     <div className="p-6 md:p-8 space-y-6 max-w-5xl">
       <div>
-        <h1 className="text-3xl font-bold">Recherche &amp; Inventaire</h1>
-        <p className="text-muted-foreground">Scannez QR codes et codes-barres en masse. Mode douchette ou caméra.</p>
+        <h1 className="text-3xl font-bold">Recherche</h1>
+        <p className="text-muted-foreground">Scannez QR codes et codes-barres, ou tapez un identifiant.</p>
       </div>
 
       <div className="rounded-xl border bg-card p-4 space-y-3">
-        <div className="flex gap-2 flex-wrap">
-          <Button variant={mode === "out" ? "default" : "outline"} onClick={() => setMode("out")}>− Sortie</Button>
-          <Button variant={mode === "in" ? "default" : "outline"} onClick={() => setMode("in")}>+ Entrée</Button>
-          <Button variant={mode === "details" ? "default" : "outline"} onClick={() => setMode("details")}>
-            <Pencil className="mr-1 h-4 w-4" /> Détails / Modifier
-          </Button>
-        </div>
         <form onSubmit={submit} className="flex gap-2">
           <Input
             ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Scannez avec la douchette ou tapez un code…"
+            placeholder="Scannez avec la douchette ou tapez un identifiant…"
             className="text-base"
           />
           <Button type="submit">OK</Button>
@@ -213,41 +201,55 @@ function RecherchePage() {
           <CameraScanner
             continuous
             formats={scanning}
-            onScan={onScan}
+            onScan={(t) => lookup(t)}
             onClose={() => setScanning(null)}
           />
         )}
       </div>
 
       <div className="rounded-xl border bg-card p-4">
-        <div className="flex items-center justify-between mb-3">
-          <p className="font-semibold">Derniers scans</p>
-          {hits.length > 0 && (
-            <Button size="sm" variant="ghost" onClick={() => setHits([])}>Vider</Button>
-          )}
+        <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
+          <p className="font-semibold">Derniers scans ({hits.length})</p>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="destructive"
+              disabled={checked.size === 0 || sortirSelection.isPending}
+              onClick={() => sortirSelection.mutate()}
+            >
+              <Trash2 className="mr-1 h-4 w-4" /> Sortir ({checked.size})
+            </Button>
+            {hits.length > 0 && (
+              <Button size="sm" variant="ghost" onClick={() => { setHits([]); setChecked(new Set()); }}>Vider</Button>
+            )}
+          </div>
         </div>
         <div className="space-y-2">
           {hits.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">Aucun scan pour le moment.</p>}
           {hits.map((h) => (
-            <div key={h.id + h.scannedAt} className="flex items-center gap-3 p-3 rounded-lg border bg-background">
-              <Badge variant={h.kind === "wine" ? "secondary" : "default"}>{h.kind === "wine" ? "Vin" : "Produit"}</Badge>
-              <div className="flex-1 min-w-0">
+            <div
+              key={h.id + h.scannedAt}
+              className={cn(
+                "flex items-center gap-3 p-3 rounded-lg border bg-background",
+                checked.has(h.id) && "border-primary",
+              )}
+            >
+              <Checkbox checked={checked.has(h.id)} onCheckedChange={() => toggleCheck(h.id)} />
+              {h.kind === "wine" && h.photoUrl ? (
+                <img src={h.photoUrl} alt="" className="h-12 w-12 rounded object-cover" />
+              ) : (
+                <Badge variant={h.kind === "wine" ? "secondary" : "default"}>{h.kind === "wine" ? "Vin" : "Prod"}</Badge>
+              )}
+              <button onClick={() => { if (h.kind === "product") setEditProduct(h.raw); else setEditWine(h.raw); }} className="flex-1 min-w-0 text-left">
                 <p className="font-medium truncate">{h.label}</p>
                 <p className="text-xs text-muted-foreground truncate">{h.sub}</p>
-              </div>
+                {h.kind === "wine" && (h.raw.medailles ?? []).length > 0 && (
+                  <div className="flex gap-1 mt-1">
+                    {h.raw.medailles.map((m: string) => <Medal key={m} className={cn("h-3 w-3", MEDAL_COLORS[m])} />)}
+                  </div>
+                )}
+              </button>
               <span className="text-sm font-mono">×{h.raw.quantite}</span>
-              <Button size="icon" variant="outline" onClick={() => adjustQty.mutate({ hit: h, delta: -1 })}>
-                <Minus className="h-4 w-4" />
-              </Button>
-              <Button size="icon" variant="outline" onClick={() => adjustQty.mutate({ hit: h, delta: +1 })}>
-                <Plus className="h-4 w-4" />
-              </Button>
-              <Button size="icon" variant="ghost" onClick={() => { if (h.kind === "product") setEditProduct(h.raw); else setEditWine(h.raw); }}>
-                <Pencil className="h-4 w-4" />
-              </Button>
-              <Button size="icon" variant="ghost" onClick={() => setHits((p) => p.filter((x) => x !== h))}>
-                <Trash2 className="h-4 w-4" />
-              </Button>
             </div>
           ))}
         </div>

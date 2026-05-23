@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
@@ -13,16 +14,24 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Heart, Trash2, Search, Printer, Pencil, Eye, Download, Share2 } from "lucide-react";
+import { Heart, Trash2, Search, Printer, Pencil, Eye, Download, Share2, Medal } from "lucide-react";
 import { QrCode } from "@/components/QrCode";
 import { printLabelAirprint, downloadLabelPdf, shareLabelPdf } from "@/lib/print";
 import { ProductEditDialog } from "@/components/ProductEditDialog";
 import { WineEditDialog } from "@/components/WineEditDialog";
 import { LabelPreviewDialog } from "@/components/LabelPreviewDialog";
+import { useSelection } from "@/hooks/use-selection";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authed/stock")({ component: StockPage });
 
 type SortKey = "recent" | "produit" | "emplacement" | "code" | "date" | "quantite";
+
+const MEDAL_COLORS: Record<string, string> = {
+  or: "text-yellow-500",
+  argent: "text-zinc-400",
+  bronze: "text-amber-700",
+};
 
 function StockPage() {
   const [tab, setTab] = useState("produits");
@@ -50,6 +59,7 @@ function ProductsList() {
   const [selected, setSelected] = useState<any | null>(null);
   const [previewing, setPreviewing] = useState<any | null>(null);
   const [editing, setEditing] = useState<any | null>(null);
+  const { has, toggle, clear, ids: selIds } = useSelection();
 
   const { data: products } = useQuery({
     queryKey: ["products"],
@@ -141,26 +151,44 @@ function ProductsList() {
         </Select>
       </div>
 
-      <p className="text-sm text-muted-foreground">{filtered.length} produit(s)</p>
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <p className="text-sm text-muted-foreground">{filtered.length} produit(s)</p>
+        {selIds.length > 0 && (
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary">{selIds.length} sélectionné(s)</Badge>
+            <Button size="sm" variant="outline" onClick={clear}>Tout désélectionner</Button>
+          </div>
+        )}
+      </div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {filtered.map((p: any) => (
-          <button
-            key={p.id}
-            onClick={() => setSelected(p)}
-            className="text-left rounded-xl border bg-card p-4 hover:border-primary transition group"
-          >
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="font-mono text-xs text-muted-foreground">{p.code}</p>
-                <p className="font-semibold">{p.produit}</p>
-                <p className="text-sm text-muted-foreground">{[p.animal, p.fruit].filter(Boolean).join(" / ")}</p>
+        {filtered.map((p: any) => {
+          const isSel = has(p.id);
+          return (
+            <div
+              key={p.id}
+              className={cn(
+                "relative text-left rounded-xl border bg-card p-4 transition group",
+                isSel ? "border-primary ring-2 ring-primary/30" : "hover:border-primary",
+              )}
+            >
+              <div className="absolute top-2 left-2 z-10" onClick={(e) => e.stopPropagation()}>
+                <Checkbox checked={isSel} onCheckedChange={() => toggle(p.id)} />
               </div>
-              <Badge variant="secondary">×{p.quantite}</Badge>
+              <button onClick={() => setSelected(p)} className="text-left w-full pl-7">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="font-mono text-xs text-muted-foreground">{p.code}</p>
+                    <p className="font-semibold">{p.produit}</p>
+                    <p className="text-sm text-muted-foreground">{[p.animal, p.fruit].filter(Boolean).join(" / ")}</p>
+                  </div>
+                  <Badge variant="secondary">×{p.quantite}</Badge>
+                </div>
+                <p className="text-xs mt-2 text-muted-foreground">{p.emplacement}</p>
+              </button>
             </div>
-            <p className="text-xs mt-2 text-muted-foreground">{p.emplacement}</p>
-          </button>
-        ))}
+          );
+        })}
         {filtered.length === 0 && <p className="text-muted-foreground col-span-full text-center py-12">Aucun produit.</p>}
       </div>
 
@@ -225,7 +253,28 @@ function ProductsList() {
   );
 }
 
-function WinesList() {
+function useWinePhotos(wines: any[] | undefined) {
+  const [urls, setUrls] = useState<Record<string, string>>({});
+  useEffect(() => {
+    if (!wines) return;
+    const toFetch = wines.filter((w) => w.photo_url && !urls[w.id]);
+    if (toFetch.length === 0) return;
+    (async () => {
+      const paths = toFetch.map((w) => w.photo_url as string);
+      const { data } = await supabase.storage.from("wine-photos").createSignedUrls(paths, 600);
+      if (!data) return;
+      setUrls((prev) => {
+        const next = { ...prev };
+        data.forEach((d, i) => { if (d.signedUrl) next[toFetch[i].id] = d.signedUrl; });
+        return next;
+      });
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wines]);
+  return urls;
+}
+
+export function WinesList() {
   const qc = useQueryClient();
   const [q, setQ] = useState("");
   const [sort, setSort] = useState("recent");
@@ -270,6 +319,8 @@ function WinesList() {
     });
     return sorted;
   }, [wines, q, sort, colorFilter]);
+
+  const photoUrls = useWinePhotos(filtered);
 
   const toggleFavori = useMutation({
     mutationFn: async ({ id, fav }: { id: string; fav: boolean }) => {
@@ -328,18 +379,30 @@ function WinesList() {
       <p className="text-sm text-muted-foreground">{filtered.length} vin(s)</p>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {filtered.map((w: any) => (
-          <button key={w.id} onClick={() => openDetail(w)} className="text-left rounded-xl border bg-card p-4 hover:border-primary transition relative">
-            <button
-              onClick={(e) => { e.stopPropagation(); toggleFavori.mutate({ id: w.id, fav: !w.favori }); }}
-              className="absolute top-2 right-2"
-              aria-label="favori"
-            >
-              <Heart className={`h-5 w-5 ${w.favori ? "fill-accent text-accent" : "text-muted-foreground"}`} />
-            </button>
-            <p className="font-semibold pr-6">{w.chateau || "(Sans nom)"}</p>
-            <p className="text-sm text-muted-foreground">{w.type_vin} · {w.couleur}</p>
-            <p className="text-xs mt-1">{w.millesime ?? "—"} · ×{w.quantite}</p>
-            <p className="text-xs text-muted-foreground mt-1">{w.emplacement}</p>
+          <button key={w.id} onClick={() => openDetail(w)} className="text-left rounded-xl border bg-card p-3 hover:border-primary transition relative flex gap-3">
+            {w.photo_url && photoUrls[w.id] ? (
+              <img src={photoUrls[w.id]} alt="" className="h-20 w-20 rounded-md object-cover shrink-0" />
+            ) : (
+              <div className="h-20 w-20 rounded-md border-2 border-dashed shrink-0" />
+            )}
+            <div className="flex-1 min-w-0">
+              <button
+                onClick={(e) => { e.stopPropagation(); toggleFavori.mutate({ id: w.id, fav: !w.favori }); }}
+                className="absolute top-2 right-2"
+                aria-label="favori"
+              >
+                <Heart className={`h-5 w-5 ${w.favori ? "fill-accent text-accent" : "text-muted-foreground"}`} />
+              </button>
+              <p className="font-semibold pr-6 truncate">{w.chateau || "(Sans nom)"}</p>
+              <p className="text-xs text-muted-foreground truncate">{w.type_vin} · {w.couleur}</p>
+              <p className="text-xs mt-0.5">{w.millesime ?? "—"} · ×{w.quantite}</p>
+              <div className="flex items-center gap-1 mt-1">
+                {(w.medailles ?? []).map((m: string) => (
+                  <Medal key={m} className={cn("h-4 w-4", MEDAL_COLORS[m])} />
+                ))}
+                {w.comme_racheter && <Badge variant="outline" className="text-[10px] h-4 px-1">comme</Badge>}
+              </div>
+            </div>
           </button>
         ))}
         {filtered.length === 0 && <p className="text-muted-foreground col-span-full text-center py-12">Aucun vin.</p>}
@@ -366,6 +429,11 @@ function WinesList() {
                   <Info l="Quantité" v={selected.quantite} />
                   <Info l="Code-barres" v={selected.code_barre} />
                   <Info l="Favori" v={selected.favori ? "Oui" : "Non"} />
+                  {(selected.medailles ?? []).length > 0 && (
+                    <p className="flex items-center gap-1"><span className="text-muted-foreground">Médailles :</span>
+                      {selected.medailles.map((m: string) => <Medal key={m} className={cn("h-4 w-4", MEDAL_COLORS[m])} />)}
+                    </p>
+                  )}
                 </div>
               </div>
               {selected.notes && <p className="text-sm text-muted-foreground border-t pt-3">{selected.notes}</p>}
