@@ -72,7 +72,7 @@ export async function generateLabelPdf(
     id: data.id, produit: data.produit, animal: data.animal, fruit: data.fruit,
     bague: data.bague, date: data.date, poids: data.poids, unite: data.unite,
   });
-  const qrPx = Math.round(Math.min(w, h) * 8); // ~8px/mm
+  const qrPx = Math.max(512, Math.round(Math.min(w, h) * 32)); // ~32 px/mm pour modules nets
   const qr = await QRCode.toDataURL(payload, { width: qrPx, margin: 0 });
 
   for (let i = 0; i < quantite; i++) {
