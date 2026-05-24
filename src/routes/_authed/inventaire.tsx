@@ -25,6 +25,11 @@ function InventairePage() {
   const [filtProduit, setFiltProduit] = useState<string>("__all__");
   const [filtAnimal, setFiltAnimal] = useState<string>("__all__");
   const [filtFruit, setFiltFruit] = useState<string>("__all__");
+  const [filtChateau, setFiltChateau] = useState<string>("__all__");
+  const [filtCouleur, setFiltCouleur] = useState<string>("__all__");
+  const [filtMedaille, setFiltMedaille] = useState<string>("__all__");
+  const [filtTypeVin, setFiltTypeVin] = useState<string>("__all__");
+  const [filtMillesime, setFiltMillesime] = useState<string>("__all__");
   const [autoSortir, setAutoSortir] = useState(false);
   const [started, setStarted] = useState(false);
   const [input, setInput] = useState("");
@@ -42,12 +47,26 @@ function InventairePage() {
     },
   });
 
+  const { data: wines = [] } = useQuery({
+    queryKey: ["inv-wines"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("wines").select("*").is("deleted_at", null).gt("quantite", 0);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
   const produits = useMemo(() => Array.from(new Set(products.map((p: any) => p.produit).filter(Boolean))).sort(), [products]);
   const animaux = useMemo(() => Array.from(new Set(products.map((p: any) => p.animal).filter(Boolean))).sort(), [products]);
   const fruits = useMemo(() => Array.from(new Set(products.map((p: any) => p.fruit).filter(Boolean))).sort(), [products]);
+  const chateaux = useMemo(() => Array.from(new Set(wines.map((w: any) => w.chateau).filter(Boolean))).sort(), [wines]);
+  const couleurs = useMemo(() => Array.from(new Set(wines.map((w: any) => w.couleur).filter(Boolean))).sort(), [wines]);
+  const typesVin = useMemo(() => Array.from(new Set(wines.map((w: any) => w.type_vin).filter(Boolean))).sort(), [wines]);
+  const millesimes = useMemo(() => Array.from(new Set(wines.map((w: any) => w.millesime).filter(Boolean))).sort((a: any, b: any) => b - a).map(String), [wines]);
+  const medailles = useMemo(() => Array.from(new Set(wines.flatMap((w: any) => w.medailles ?? []).filter(Boolean))).sort(), [wines]);
 
   const scopeItems: Item[] = useMemo(() => {
-    return products
+    const prodItems = products
       .filter((p: any) => {
         if (filtProduit !== "__all__" && p.produit !== filtProduit) return false;
         if (filtAnimal !== "__all__" && p.animal !== filtAnimal) return false;
@@ -59,7 +78,23 @@ function InventairePage() {
         sub: [p.animal, p.fruit, p.code, p.emplacement].filter(Boolean).join(" · "),
         code: p.code, stockQty: p.quantite ?? 0, raw: p,
       }));
-  }, [products, filtProduit, filtAnimal, filtFruit]);
+    const wineItems = wines
+      .filter((w: any) => {
+        if (filtChateau !== "__all__" && w.chateau !== filtChateau) return false;
+        if (filtCouleur !== "__all__" && w.couleur !== filtCouleur) return false;
+        if (filtTypeVin !== "__all__" && w.type_vin !== filtTypeVin) return false;
+        if (filtMillesime !== "__all__" && String(w.millesime ?? "") !== filtMillesime) return false;
+        if (filtMedaille !== "__all__" && !(w.medailles ?? []).includes(filtMedaille)) return false;
+        return true;
+      })
+      .map((w: any) => ({
+        id: w.id, kind: "wine" as const, label: w.chateau || "Vin",
+        sub: [w.couleur, w.type_vin, w.millesime, w.emplacement].filter(Boolean).join(" · "),
+        code: w.code_barre || "", stockQty: w.quantite ?? 0, raw: w,
+      }));
+    return [...prodItems, ...wineItems];
+  }, [products, wines, filtProduit, filtAnimal, filtFruit, filtChateau, filtCouleur, filtTypeVin, filtMillesime, filtMedaille]);
+
 
   const countedIds = useMemo(() => new Set(counted.map((c) => c.id)), [counted]);
   const remaining = useMemo(() => scopeItems.filter((i) => !countedIds.has(i.id)), [scopeItems, countedIds]);
