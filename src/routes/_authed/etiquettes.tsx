@@ -19,6 +19,7 @@ const DEMO = {
   date: "2025-11",
   poids: 250,
   unite: "Gr",
+  version: "V1",
 };
 
 function EtiquettesPage() {
