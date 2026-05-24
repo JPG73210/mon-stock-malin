@@ -89,10 +89,10 @@ export async function generateLabelPdf(
     const qrMax = portrait
       ? Math.min(w - pad * 2, h * 0.6)
       : qrLandscape;
-    // 23×23 : QR réduit à 10 mm pour libérer la place au texte à droite.
-    const qrSize = square ? 10 : qrMax;
+    // 23×23 : QR remonté et légèrement agrandi (11 mm) tout en laissant la place au texte.
+    const qrSize = square ? 11 : qrMax;
     const qx = square ? 3 : (portrait ? (w - qrSize) / 2 : pad);
-    const qy = square ? 9 : (portrait ? pad : (h - qrSize) / 2);
+    const qy = square ? 7 : (portrait ? pad : (h - qrSize) / 2);
     doc.addImage(qr, "PNG", qx, qy, qrSize, qrSize);
 
     if (square) {
