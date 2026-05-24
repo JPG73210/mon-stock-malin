@@ -265,7 +265,9 @@ function VinPage() {
             <p>Code-barres&nbsp;: {f.code_barre || "—"}</p>
             {f.medailles.length > 0 && (
               <p className="flex items-center gap-1">Médailles&nbsp;:
-                {f.medailles.map((m) => <Trophy key={m} className={cn("h-4 w-4", MEDAL_COLORS[m])} />)}
+                {f.medailles.map((m) => m === "reserve"
+                  ? <img key={m} src={coffreReserve} alt="" className="h-4 w-4 object-contain" />
+                  : <Trophy key={m} className={cn("h-4 w-4", MEDAL_COLORS[m])} />)}
               </p>
             )}
           </div>
