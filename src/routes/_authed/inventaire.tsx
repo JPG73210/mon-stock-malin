@@ -300,6 +300,11 @@ function InventairePage() {
                 {filtProduit !== "__all__" && <Badge variant="outline">{filtProduit}</Badge>}
                 {filtAnimal !== "__all__" && <Badge variant="outline">{filtAnimal}</Badge>}
                 {filtFruit !== "__all__" && <Badge variant="outline">{filtFruit}</Badge>}
+                {filtChateau !== "__all__" && <Badge variant="outline">{filtChateau}</Badge>}
+                {filtCouleur !== "__all__" && <Badge variant="outline">{filtCouleur}</Badge>}
+                {filtMedaille !== "__all__" && <Badge variant="outline">Médaille {filtMedaille}</Badge>}
+                {filtTypeVin !== "__all__" && <Badge variant="outline">{filtTypeVin}</Badge>}
+                {filtMillesime !== "__all__" && <Badge variant="outline">{filtMillesime}</Badge>}
                 <span className="text-sm text-muted-foreground">{counted.length} / {scopeItems.length} compté(s)</span>
               </div>
               <div className="flex gap-2">
