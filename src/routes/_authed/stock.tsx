@@ -385,6 +385,7 @@ export function WinesList() {
             <SelectItem value="millesime">Millésime</SelectItem>
             <SelectItem value="quantite">Quantité</SelectItem>
             <SelectItem value="favori">Favoris d'abord</SelectItem>
+            <SelectItem value="medailles">Médailles</SelectItem>
           </SelectContent>
         </Select>
       </div>
