@@ -98,12 +98,13 @@ function VinPage() {
 
   async function printQrLabel() {
     const id = f.code_barre || f.chateau || `VIN-${Date.now()}`;
+    const qty = Math.max(1, Number(f.quantite) || 1);
     try {
       await enqueuePrintJob("23x23v", {
         id, produit: f.chateau, animal: f.type_vin,
         date: f.millesime,
-      }, 1);
-      toast.success("Étiquette 23×23 vin envoyée à l'imprimante");
+      }, qty);
+      toast.success(`${qty} étiquette(s) 23×23 vin envoyée(s) à l'imprimante`);
     } catch (e: any) {
       toast.error(e.message ?? "Erreur impression");
     }
