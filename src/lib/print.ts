@@ -194,10 +194,11 @@ export async function generateLabelPdf(
 
       const availH = h - pad * 2;
       const lineH = availH / 4;
-      const qrSize = availH - lineH - 0.3;
+      const idToQrGap = 1.8; // espace ID → QR (mm)
+      const qrSize = availH - lineH - idToQrGap - 0.5;
 
       const fits = (sz: number) => {
-        if (sz * 0.42 > lineH - 0.2) return false;
+        if (sz * 0.42 > lineH - 1) return false;
         doc.setFont("helvetica", "bold"); doc.setFontSize(sz);
         const idW = id ? doc.getTextWidth(id) : 0;
         const leftW = Math.max(qrSize, idW);
@@ -218,7 +219,7 @@ export async function generateLabelPdf(
       if (id) doc.text(id, pad, pad + sz * 0.42 + 0.2);
 
       const qrX = pad + (leftW - qrSize) / 2;
-      const qrY = pad + lineH + 0.1;
+      const qrY = pad + lineH + idToQrGap;
       doc.addImage(qr, "PNG", qrX, qrY, qrSize, qrSize);
 
       const txR = pad + leftW + 1.2;
