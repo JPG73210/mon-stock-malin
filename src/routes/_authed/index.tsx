@@ -276,7 +276,7 @@ function Dashboard() {
         <Link to="/vin" className="rounded-xl border bg-card hover:bg-secondary/60 p-6 flex items-center gap-4 transition">
           <Wine className="h-8 w-8 text-primary" />
           <div>
-            <p className="font-semibold">Ajouter un vin</p>
+            <p className="font-semibold">Étiquette vin</p>
             <p className="text-sm text-muted-foreground">Photo, code-barres, millésime</p>
           </div>
         </Link>
