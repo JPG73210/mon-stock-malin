@@ -39,7 +39,7 @@ const isWin = os.platform() === "win32";
 // Mapping format → option media CUPS (doit correspondre à src/lib/print.ts ROLL_SPECS)
 const CUPS_MEDIA = {
   "23x23":  "Custom.23x23mm",
-  "17x54":  "Custom.17x54mm",
+  "17x54":  "Custom.54x17mm",
   "62x29":  "Custom.29x62mm",
   "62x100": "Custom.62x100mm",
   "62":     "Custom.62x30mm",
