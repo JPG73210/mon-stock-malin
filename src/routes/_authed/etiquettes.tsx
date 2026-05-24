@@ -1,7 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { LabelPreviewInline } from "@/components/LabelPreviewInline";
 import { ETIQUETTE_FORMATS } from "@/lib/constants";
-import { rollSpec } from "@/lib/print";
+import { rollSpec, enqueuePrintJob } from "@/lib/print";
+import { Button } from "@/components/ui/button";
+import { Printer } from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authed/etiquettes")({
   component: EtiquettesPage,
@@ -34,9 +37,25 @@ function EtiquettesPage() {
           const spec = rollSpec(fmt);
           return (
             <div key={fmt} className="rounded-xl border bg-card p-4 space-y-3">
-              <div>
-                <p className="font-semibold">{spec.label}</p>
-                <p className="text-xs text-muted-foreground">{spec.dk} · {spec.mediaWidth}×{spec.mediaHeight} mm</p>
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="font-semibold">{spec.label}</p>
+                  <p className="text-xs text-muted-foreground">{spec.dk} · {spec.mediaWidth}×{spec.mediaHeight} mm</p>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={async () => {
+                    try {
+                      await enqueuePrintJob(fmt, DEMO, 1);
+                      toast.success(`Impression ${spec.label} envoyée`);
+                    } catch (e: any) {
+                      toast.error(e?.message ?? "Erreur impression");
+                    }
+                  }}
+                >
+                  <Printer className="mr-1 h-4 w-4" /> Imprimer
+                </Button>
               </div>
               <div className="flex justify-center bg-muted/30 rounded p-3">
                 <LabelPreviewInline fmt={fmt} data={DEMO} scale={5} />
