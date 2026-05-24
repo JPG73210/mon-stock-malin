@@ -211,8 +211,8 @@ function VinPage() {
           {/* Médailles */}
           <div className="p-3 rounded-md border">
             <p className="text-sm font-medium mb-2">Médailles</p>
-            <div className="flex gap-2">
-              {(["or", "argent", "bronze"] as const).map((m) => {
+            <div className="flex gap-2 flex-wrap">
+              {(["or", "argent", "bronze", "reserve"] as const).map((m) => {
                 const active = f.medailles.includes(m);
                 return (
                   <button
@@ -220,12 +220,16 @@ function VinPage() {
                     type="button"
                     onClick={() => toggleMedal(m)}
                     className={cn(
-                      "flex flex-col items-center gap-1 rounded-md border p-3 transition w-20",
+                      "flex flex-col items-center gap-1 rounded-md border p-3 transition w-24",
                       active ? "border-primary bg-primary/10" : "border-input hover:bg-muted",
                     )}
                   >
-                    <Trophy className={cn("h-6 w-6", MEDAL_COLORS[m])} />
-                    <span className="text-xs capitalize">{m}</span>
+                    {m === "reserve" ? (
+                      <img src={coffreReserve} alt="" className="h-6 w-6 object-contain" />
+                    ) : (
+                      <Trophy className={cn("h-6 w-6", MEDAL_COLORS[m])} />
+                    )}
+                    <span className="text-[11px] text-center leading-tight">{MEDAL_LABELS[m]}</span>
                   </button>
                 );
               })}
