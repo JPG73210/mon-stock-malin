@@ -121,11 +121,15 @@ export async function generateLabelPdf(
       doc.setFillColor(255, 255, 255);
       doc.rect(0, 0, w, h, "F");
 
-      // QR carré, légèrement réduit, collé à gauche
-      const qrL = h - pad * 2 - 1;
+      // QR — compense la distorsion d'impression (sortie mesurée 13w × 11h
+      // pour un PDF carré). On largue la largeur en conséquence.
+      const qrH = h - pad * 2 - 1;        // 14 mm de haut
+      const qrW = qrH * (11 / 13);        // ≈ 11.85 mm de large
       const qrX = pad;
-      const qrY = (h - qrL) / 2;
-      doc.addImage(qr, "PNG", qrX, qrY, qrL, qrL);
+      const qrY = (h - qrH) / 2;
+      doc.addImage(qr, "PNG", qrX, qrY, qrW, qrH);
+
+      const qrL = qrW; // pour le calcul de la zone texte ci-dessous
 
       // Zone texte à droite du QR
       const tx = qrX + qrL + 1.2;
