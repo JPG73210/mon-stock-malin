@@ -121,10 +121,10 @@ export async function generateLabelPdf(
       doc.setFillColor(255, 255, 255);
       doc.rect(0, 0, w, h, "F");
 
-      // QR pleine hauteur, collé à gauche
-      const qrL = h - pad * 2;
+      // QR carré, légèrement réduit, collé à gauche
+      const qrL = h - pad * 2 - 1;
       const qrX = pad;
-      const qrY = pad;
+      const qrY = (h - qrL) / 2;
       doc.addImage(qr, "PNG", qrX, qrY, qrL, qrL);
 
       // Zone texte à droite du QR
@@ -132,42 +132,40 @@ export async function generateLabelPdf(
       const tw = w - tx - pad;
 
       const id = data.id ? String(data.id) : "";
-      const date = data.date ? String(data.date) : "";
+      const version = data.version ? String(data.version) : "";
       const secondary = data.animal || data.fruit;
-      const parts = [data.produit, secondary, data.version]
+      const parts = [data.produit, secondary]
         .filter((v) => v != null && String(v).trim() !== "")
         .map(String);
       const line2 = parts.join(" · ");
 
-      // Cherche la plus grande taille égale pour les 2 lignes qui rentre
-      // en largeur tw et en hauteur (h - pad*2).
+      // Plus grande taille égale qui rentre en largeur et hauteur
       const fits = (s: number) => {
         doc.setFont("helvetica", "bold"); doc.setFontSize(s);
         const idW = id ? doc.getTextWidth(id) : 0;
         const line2W = line2 ? doc.getTextWidth(line2) : 0;
         doc.setFont("helvetica", "normal"); doc.setFontSize(s);
-        const dateW = date ? doc.getTextWidth(date) : 0;
-        const l1W = idW + (id && date ? s * 0.25 : 0) + dateW;
+        const verW = version ? doc.getTextWidth(version) : 0;
+        const l1W = idW + (id && version ? s * 0.25 : 0) + verW;
         if (l1W > tw) return false;
         if (line2W > tw) return false;
-        // vertical : 2 lignes + petit gap
         const total = s * 0.42 * 2 + s * 0.25;
         return total <= h - pad * 2;
       };
       let s = 14;
       while (s > 4 && !fits(s)) s -= 0.25;
 
-      // Ligne 1 : ID (gras) + date (normal)
+      // Ligne 1 : ID (gras) + version (normal)
       doc.setFont("helvetica", "bold"); doc.setFontSize(s);
       const idW = id ? doc.getTextWidth(id) : 0;
       const y1 = pad + s * 0.42 + 0.6;
       if (id) doc.text(id, tx, y1);
-      if (date) {
+      if (version) {
         doc.setFont("helvetica", "normal"); doc.setFontSize(s);
-        doc.text(date, tx + idW + (id ? s * 0.25 : 0), y1);
+        doc.text(version, tx + idW + (id ? s * 0.25 : 0), y1);
       }
 
-      // Ligne 2 : produit · animal/fruit · version
+      // Ligne 2 : produit · animal/fruit
       if (line2) {
         doc.setFont("helvetica", "bold"); doc.setFontSize(s);
         const y2 = h - pad - 0.6;
