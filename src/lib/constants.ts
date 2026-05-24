@@ -17,11 +17,13 @@ export const UNITES_POIDS = ["Gr", "Kg", "L", "Pièce", "Lot de 5", "Lot de 3", 
 export const ETIQUETTE_FORMATS = [
   "Pas d'étiquettes",
   "23x23",   // DK-11221 — carrée 23×23
+  "23x23v",  // DK-11221 — carrée 23×23 (vin, QR seul)
   "17x54",   // DK-11204 — adresse 17×54
   "62x29",   // DK-11209 — petite adresse 29×62
   "62x100",  // DK-11202 — expédition 62×100
   "62",      // DK-44205 — continu 62 mm (longueur 30 mm)
 ] as const;
+
 
 export const TYPES_VIN = ["Bordeaux", "Bourgogne", "Champagne", "Liqueur", "Spiritueux", "Autre"] as const;
 
