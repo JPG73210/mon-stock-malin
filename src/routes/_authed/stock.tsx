@@ -451,7 +451,7 @@ export function WinesList() {
                   <Info l="Favori" v={selected.favori ? "Oui" : "Non"} />
                   {(selected.medailles ?? []).length > 0 && (
                     <p className="flex items-center gap-1"><span className="text-muted-foreground">Médailles :</span>
-                      {selected.medailles.map((m: string) => <Medal key={m} className={cn("h-4 w-4", MEDAL_COLORS[m])} />)}
+                      {selected.medailles.map((m: string) => <MedalIcon key={m} m={m} className="h-4 w-4" />)}
                     </p>
                   )}
                 </div>
