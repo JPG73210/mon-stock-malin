@@ -33,7 +33,9 @@ export function WineEditDialog({
         chateau: f.chateau || null, type_vin: f.type_vin, couleur: f.couleur,
         millesime: f.millesime ? Number(f.millesime) : null,
         emplacement: f.emplacement, code_barre: f.code_barre || null,
-        quantite: Number(f.quantite) || 1, favori: !!f.favori, notes: f.notes || null,
+        quantite: Number(f.quantite) || 1, favori: !!f.favori,
+        medailles: f.medailles ?? [],
+        notes: f.notes || null,
       }).eq("id", f.id);
       if (error) throw error;
     },
