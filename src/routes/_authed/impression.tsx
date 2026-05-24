@@ -50,6 +50,25 @@ function ImpressionPage() {
     onError: (e: any) => toast.error(e.message ?? "Erreur"),
   });
 
+  const clearDone = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("print_jobs").delete().in("status", ["printed", "error"]);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Historique vidé"); qc.invalidateQueries({ queryKey: ["print-jobs"] }); },
+    onError: (e: any) => toast.error(e.message ?? "Erreur"),
+  });
+
+  const clearAll = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("print_jobs").delete().not("id", "is", null);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("File entièrement vidée"); qc.invalidateQueries({ queryKey: ["print-jobs"] }); },
+    onError: (e: any) => toast.error(e.message ?? "Erreur"),
+  });
+
+
   function downloadPdf(j: any) {
     if (!j.pdf_base64) return toast.error("Pas de PDF disponible");
     const bin = atob(j.pdf_base64);
