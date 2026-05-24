@@ -53,5 +53,5 @@ Brother QL, puis lancer le script avec `pm2 start agent.mjs`.
 
 - `lp: Erreur — imprimante introuvable` → vérifier `lpstat -p`, corriger
   `PRINTER` dans `config.json`.
-- Étiquette mal centrée → ajuster `media=Custom.62x30mm` dans `agent.mjs` pour
+- Étiquette mal centrée → ajuster `media=Custom.62x25mm` dans `agent.mjs` pour
   les rouleaux pré-découpés.
