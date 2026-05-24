@@ -418,7 +418,7 @@ export function WinesList() {
               <p className="text-xs mt-0.5">{w.millesime ?? "—"} · ×{w.quantite}</p>
               <div className="flex items-center gap-1 mt-1">
                 {(w.medailles ?? []).map((m: string) => (
-                  <Medal key={m} className={cn("h-4 w-4", MEDAL_COLORS[m])} />
+                  <MedalIcon key={m} m={m} className="h-4 w-4" />
                 ))}
                 {w.comme_racheter && <Badge variant="outline" className="text-[10px] h-4 px-1">comme</Badge>}
               </div>
