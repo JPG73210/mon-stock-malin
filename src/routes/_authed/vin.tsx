@@ -19,6 +19,7 @@ import { RecentEntries } from "@/components/RecentEntries";
 import { QrCode } from "@/components/QrCode";
 import { enqueuePrintJob } from "@/lib/print";
 import { cn } from "@/lib/utils";
+import coffreReserve from "@/assets/coffre-reserve.png";
 
 export const Route = createFileRoute("/_authed/vin")({ component: VinPage });
 
