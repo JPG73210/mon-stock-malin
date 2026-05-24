@@ -120,16 +120,13 @@ export async function generateLabelPdf(
       continue;
     }
 
-    // 17×54 landscape : QR pleine hauteur à gauche, 2 lignes à droite.
-    const isNarrow17x54 = Math.abs(w - 54) < 0.5 && Math.abs(h - 17) < 0.5;
+    // 17×54 landscape : QR à droite du PDF (sort à gauche imprimé), 2 lignes texte à gauche.
     if (isNarrow17x54) {
-      // Re-place le QR : carré pleine hauteur, collé à gauche.
-      // (annule le rendu précédent en redessinant par-dessus n'est pas possible —
-      //  ici on accepte le QR déjà placé et on calque le texte à droite.)
-      const txN = qx + qrSize + 1.5;
-      const twN = w - txN - 1;
-      const l1y = h / 2 - 1;
-      const l2y = h / 2 + 5;
+      const txN = pad;
+      const twN = qx - pad - 1;
+      const l1y = h / 2 - 1.2;
+      const l2y = h / 2 + 4.8;
+      // Ligne 1 : ID (gras) à gauche, date (normal) alignée à droite.
       doc.setFont("helvetica", "bold");
       doc.setFontSize(9);
       if (data.id) doc.text(String(data.id), txN, l1y, { maxWidth: twN });
@@ -138,12 +135,18 @@ export async function generateLabelPdf(
         doc.setFontSize(7);
         doc.text(String(data.date), txN + twN, l1y, { align: "right", maxWidth: twN });
       }
+      // Ligne 2 : produit · animal/fruit · version — taille réduite si dépasse.
       const l2 = [data.produit, data.animal || data.fruit, data.version]
         .filter((v) => v != null && String(v).trim() !== "")
         .map(String).join(" · ");
       if (l2) {
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(8);
+        let size = 8;
+        doc.setFontSize(size);
+        while (doc.getTextWidth(l2) > twN && size > 5) {
+          size -= 0.5;
+          doc.setFontSize(size);
+        }
         doc.text(l2, txN, l2y, { maxWidth: twN });
       }
       continue;
