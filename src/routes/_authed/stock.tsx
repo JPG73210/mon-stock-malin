@@ -314,6 +314,18 @@ export function WinesList() {
         case "millesime": return (b.millesime ?? 0) - (a.millesime ?? 0);
         case "favori": return Number(b.favori) - Number(a.favori);
         case "quantite": return b.quantite - a.quantite;
+        case "medailles": {
+          const rank = (m: string[] | null) => {
+            const arr = m ?? [];
+            if (arr.includes("or")) return 3;
+            if (arr.includes("argent")) return 2;
+            if (arr.includes("bronze")) return 1;
+            return 0;
+          };
+          const diff = rank(b.medailles) - rank(a.medailles);
+          if (diff !== 0) return diff;
+          return (a.millesime ?? 0) - (b.millesime ?? 0);
+        }
         default: return b.created_at.localeCompare(a.created_at);
       }
     });
