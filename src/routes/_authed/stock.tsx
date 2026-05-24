@@ -22,6 +22,12 @@ import { WineEditDialog } from "@/components/WineEditDialog";
 import { LabelPreviewDialog } from "@/components/LabelPreviewDialog";
 import { useSelection } from "@/hooks/use-selection";
 import { cn } from "@/lib/utils";
+import coffreReserve from "@/assets/coffre-reserve.png";
+
+function MedalIcon({ m, className }: { m: string; className?: string }) {
+  if (m === "reserve") return <img src={coffreReserve} alt="" className={cn("object-contain", className)} />;
+  return <Medal className={cn(className, MEDAL_COLORS[m])} />;
+}
 
 export const Route = createFileRoute("/_authed/stock")({ component: StockPage });
 
