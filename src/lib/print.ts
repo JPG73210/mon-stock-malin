@@ -92,7 +92,7 @@ export async function generateLabelPdf(
     // 23×23 : QR et ID maximisés, animal collé en bas.
     const qrSize = square ? 16 : qrMax;
     const qx = square ? (w - qrSize) / 2 : (portrait ? (w - qrSize) / 2 : pad);
-    const qy = square ? 4 : (portrait ? pad : (h - qrSize) / 2);
+    const qy = square ? 2.5 : (portrait ? pad : (h - qrSize) / 2);
     doc.addImage(qr, "PNG", qx, qy, qrSize, qrSize);
 
     if (square) {
