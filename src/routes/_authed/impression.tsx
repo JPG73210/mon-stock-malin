@@ -153,12 +153,21 @@ function ImpressionPage() {
         </AccordionItem>
       </Accordion>
 
-      <h2 className="font-semibold mb-3 flex items-center justify-between">
+      <h2 className="font-semibold mb-3 flex items-center justify-between flex-wrap gap-2">
         <span>File ({jobs.length})</span>
-        <Button size="sm" variant="outline" onClick={() => createTest.mutate()} disabled={createTest.isPending}>
-          <FlaskConical className="h-4 w-4 mr-1" /> Créer un job de test
-        </Button>
+        <div className="flex gap-2 flex-wrap">
+          <Button size="sm" variant="outline" onClick={() => createTest.mutate()} disabled={createTest.isPending}>
+            <FlaskConical className="h-4 w-4 mr-1" /> Job de test
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => { if (confirm("Supprimer tous les jobs imprimés et en erreur ?")) clearDone.mutate(); }} disabled={clearDone.isPending}>
+            <Eraser className="h-4 w-4 mr-1" /> Vider l'historique
+          </Button>
+          <Button size="sm" variant="destructive" onClick={() => { if (confirm("Supprimer TOUS les jobs (y compris en attente) ?")) clearAll.mutate(); }} disabled={clearAll.isPending}>
+            <Trash2 className="h-4 w-4 mr-1" /> Tout supprimer
+          </Button>
+        </div>
       </h2>
+
       <div className="space-y-2">
         {jobs.length === 0 && <p className="text-muted-foreground text-sm">Aucun travail d'impression.</p>}
         {jobs.map((j: any) => (
