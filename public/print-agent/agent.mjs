@@ -79,7 +79,16 @@ async function printPdf(pdfBuffer, jobId, format) {
       args = ["-print-to", cfg.PRINTER, "-silent", "-exit-when-done", tmp];
     } else {
       cmd = "lp";
-      args = ["-d", cfg.PRINTER, "-o", `media=${media}`, "-o", "fit-to-page", tmp];
+      // BrCutLabel=OFF : pas de coupe entre chaque étiquette
+      // BrCutAtEnd=ON  : coupe le ruban uniquement en fin de job
+      args = [
+        "-d", cfg.PRINTER,
+        "-o", `media=${media}`,
+        "-o", "fit-to-page",
+        "-o", "BrCutLabel=OFF",
+        "-o", "BrCutAtEnd=ON",
+        tmp,
+      ];
     }
     const p = spawn(cmd, args, { stdio: "inherit" });
     p.on("close", (code) => {
