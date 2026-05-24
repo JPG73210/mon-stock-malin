@@ -22,6 +22,7 @@ export type LabelData = {
   date?: string;
   poids?: number | string;
   unite?: string;
+  version?: string;
 };
 
 export const ROLL_SPECS: Record<LabelFormat, {
