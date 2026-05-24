@@ -186,7 +186,6 @@ function VinPage() {
 
           {/* Étiquette + impression QR */}
           <div className="flex items-center gap-3 p-3 rounded-md border bg-muted/30">
-            <Switch checked={f.comme_racheter} onCheckedChange={(v) => setF({ ...f, comme_racheter: v })} />
             <Label className="flex-1">Étiquette</Label>
             <Button type="button" size="icon" variant="outline" onClick={printQrLabel} title="Imprimer étiquette QR 23×23">
               <Printer className="h-4 w-4" />
