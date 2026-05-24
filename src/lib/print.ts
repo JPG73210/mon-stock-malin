@@ -169,8 +169,7 @@ export async function generateLabelPdf(
     // produit + animal : taille DOUBLÉE sur 62×30 et 17×54 (rouleaux étroits)
     // pour maximiser la lisibilité à distance.
     const isWide62x30 = isReducedRoll;
-    const isNarrow17x54 = Math.abs(w - 54) < 0.5 && Math.abs(h - 17) < 0.5;
-    const boostProductAnimal = isWide62x30 || isNarrow17x54;
+    const boostProductAnimal = isWide62x30;
     const productAnimalSize = boostProductAnimal ? bodySize * 2 : bodySize;
     const productAnimalLh = boostProductAnimal ? lh * 1.9 : lh;
 
