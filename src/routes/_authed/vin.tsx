@@ -12,7 +12,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Camera, Save, Upload, X, Heart, Printer, Medal } from "lucide-react";
+import { Camera, Save, Upload, X, Heart, Printer, Trophy } from "lucide-react";
 import { CameraScanner } from "@/components/CameraScanner";
 import { ManagedSelect } from "@/components/ManagedSelect";
 import { RecentEntries } from "@/components/RecentEntries";
@@ -214,7 +214,7 @@ function VinPage() {
                       active ? "border-primary bg-primary/10" : "border-input hover:bg-muted",
                     )}
                   >
-                    <Medal className={cn("h-6 w-6", MEDAL_COLORS[m])} />
+                    <Trophy className={cn("h-6 w-6", MEDAL_COLORS[m])} />
                     <span className="text-xs capitalize">{m}</span>
                   </button>
                 );
@@ -251,7 +251,7 @@ function VinPage() {
             <p>Code-barres&nbsp;: {f.code_barre || "—"}</p>
             {f.medailles.length > 0 && (
               <p className="flex items-center gap-1">Médailles&nbsp;:
-                {f.medailles.map((m) => <Medal key={m} className={cn("h-4 w-4", MEDAL_COLORS[m])} />)}
+                {f.medailles.map((m) => <Trophy key={m} className={cn("h-4 w-4", MEDAL_COLORS[m])} />)}
               </p>
             )}
           </div>
