@@ -19,7 +19,8 @@ const DEMO = {
 };
 
 function EtiquettesPage() {
-  const formats = ETIQUETTE_FORMATS.filter((f) => f !== "Pas d'étiquettes");
+  const HIDDEN = new Set(["62x29", "62x100"]);
+  const formats = ETIQUETTE_FORMATS.filter((f) => f !== "Pas d'étiquettes" && !HIDDEN.has(f));
 
   return (
     <div className="p-6 md:p-8 max-w-5xl">
