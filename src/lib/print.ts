@@ -89,28 +89,29 @@ export async function generateLabelPdf(
     const qrMax = portrait
       ? Math.min(w - pad * 2, h * 0.6)
       : qrLandscape;
-    // 23×23 : QR positionné précisément (origine = coin supérieur gauche).
-    const qrSize = square ? 13 : qrMax;
+    // 23×23 : QR réduit à 10 mm pour libérer la place au texte à droite.
+    const qrSize = square ? 10 : qrMax;
     const qx = square ? 3 : (portrait ? (w - qrSize) / 2 : pad);
     const qy = square ? 9 : (portrait ? pad : (h - qrSize) / 2);
     doc.addImage(qr, "PNG", qx, qy, qrSize, qrSize);
 
     if (square) {
-      // 23×23 : ID au-dessus du QR — gras 14pt, largeur = étiquette − marges 3 mm.
+      // 23×23 : ID au-dessus du QR — gras 8pt pour tenir dans la largeur (17 mm utiles).
       if (data.id) {
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(14);
-        // baseline ≈ top + fontSize(mm) ; 14pt ≈ 4,94 mm → y ≈ 2 + 4,94
-        doc.text(String(data.id), 3, 6.9, { maxWidth: w - 6 });
+        doc.setFontSize(8);
+        doc.text(String(data.id), 3, 4.8, { maxWidth: w - 6 });
       }
-      // Animal : gras 32pt, rotation 90°, largeur = espace restant à droite de x=15.
+      // Animal : gras 32pt, rotation 90°, juste à droite du QR.
       if (data.animal) {
         doc.setFont("helvetica", "bold");
         doc.setFontSize(32);
-        doc.text(String(data.animal), 15, 9, { angle: 90, maxWidth: w - 15 - 1 });
+        const ax = qx + qrSize + 1; // 3 + 10 + 1 = 14 mm
+        doc.text(String(data.animal), ax, 9, { angle: 90, maxWidth: w - ax - 1 });
       }
       continue;
     }
+
 
     // Zone texte — occupe TOUT l'espace restant à droite du QR.
     const tx = portrait ? pad : qx + qrSize + pad * 1.5;
