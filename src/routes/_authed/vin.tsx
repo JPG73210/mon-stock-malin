@@ -43,6 +43,13 @@ const MEDAL_COLORS: Record<string, string> = {
   bronze: "text-amber-700",
 };
 
+const MEDAL_LABELS: Record<string, string> = {
+  or: "Or",
+  argent: "Argent",
+  bronze: "Bronze",
+  reserve: "Vieille Réserve",
+};
+
 function VinPage() {
   const { user } = useAuth();
   const qc = useQueryClient();
