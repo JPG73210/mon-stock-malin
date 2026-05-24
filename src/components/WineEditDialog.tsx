@@ -11,7 +11,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { ManagedSelect } from "@/components/ManagedSelect";
 import { toast } from "sonner";
-import { Save, Trash2, Heart } from "lucide-react";
+import { Save, Trash2, Heart, Trophy } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+const MEDAL_COLORS: Record<string, string> = {
+  or: "text-yellow-500",
+  argent: "text-zinc-400",
+  bronze: "text-amber-700",
+};
 
 export function WineEditDialog({
   wine, open, onClose,
