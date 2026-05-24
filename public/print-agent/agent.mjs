@@ -42,10 +42,10 @@ const CUPS_MEDIA = {
   "17x54":  "Custom.54x17mm",
   "62x29":  "Custom.29x62mm",
   "62x100": "Custom.62x100mm",
-  "62":     "Custom.62x30mm",
+  "62":     "Custom.62x25mm",
   // tolérance ancien libellé
-  "30x62":  "Custom.62x30mm",
-  "62x30":  "Custom.62x30mm",
+  "30x62":  "Custom.62x25mm",
+  "62x30":  "Custom.62x25mm",
 };
 
 // Chemins possibles de SumatraPDF sous Windows
@@ -64,7 +64,7 @@ if (isWin) {
 async function printPdf(pdfBuffer, jobId, format) {
   const tmp = path.join(os.tmpdir(), `stockjp-${jobId}.pdf`);
   fs.writeFileSync(tmp, pdfBuffer);
-  const media = CUPS_MEDIA[format] ?? "Custom.62x30mm";
+  const media = CUPS_MEDIA[format] ?? "Custom.62x25mm";
   return new Promise((resolve, reject) => {
     let cmd, args;
     if (isWin) {

@@ -38,7 +38,7 @@ export const ROLL_SPECS: Record<LabelFormat, {
   "17x54":  { dk: "DK-11204", label: "54×17 paysage",     mediaWidth: 54, mediaHeight: 17,  printable: { w: 54, h: 17  }, continuous: false, cupsMedia: "Custom.54x17mm"  },
   "62x29":  { dk: "DK-11209", label: "29×62 petite adr.", mediaWidth: 62, mediaHeight: 29,  printable: { w: 62, h: 29  }, continuous: false, cupsMedia: "Custom.29x62mm"  },
   "62x100": { dk: "DK-11202", label: "62×100 expédition", mediaWidth: 62, mediaHeight: 100, printable: { w: 62, h: 100 }, continuous: false, cupsMedia: "Custom.62x100mm" },
-  "62":     { dk: "DK-44205", label: "Continu 62 mm (30 mm)", mediaWidth: 62, mediaHeight: 30, printable: { w: 62, h: 30 }, continuous: true, cupsMedia: "Custom.62x30mm" },
+  "62":     { dk: "DK-44205", label: "Continu 62 mm (25 mm)", mediaWidth: 62, mediaHeight: 25, printable: { w: 62, h: 25 }, continuous: true, cupsMedia: "Custom.62x25mm" },
 };
 
 function normalizeFormat(fmt: string): LabelFormat {
@@ -82,11 +82,10 @@ export async function generateLabelPdf(
     const square   = Math.abs(w - h) < 2; // labels carrés (23×23) → QR + animal + ID compact
 
     // QR : toujours carré, jamais distordu.
-    // 62×30 (continu) → QR réduit d'1/3 (étiquette spécifiquement étroite).
+    // 62×25 (continu) → layout dédié ci-dessous (QR redessiné, on saute le calcul générique).
     // Autres landscape (17×54, 62×29…) → QR = pleine hauteur pour libérer texte.
-    const isReducedRoll = Math.abs(w - 62) < 0.5 && Math.abs(h - 30) < 0.5;
-    const qrLandscapeFull = Math.min(w * 0.5, h - pad * 2);
-    const qrLandscape = isReducedRoll ? qrLandscapeFull * (2 / 3) : qrLandscapeFull;
+    const isReducedRoll = Math.abs(w - 62) < 0.5 && Math.abs(h - 25) < 0.5;
+    const qrLandscape = Math.min(w * 0.5, h - pad * 2);
     const qrMax = portrait
       ? Math.min(w - pad * 2, h * 0.6)
       : qrLandscape;
@@ -178,9 +177,59 @@ export async function generateLabelPdf(
       continue;
     }
 
+    if (isReducedRoll) {
+      // 62×25 : page blanche, on redessine tout (ID en haut-gauche, QR dessous, 4 lignes à droite).
+      doc.setFillColor(255, 255, 255);
+      doc.rect(0, 0, w, h, "F");
 
+      const id = data.id ? String(data.id) : "";
+      const produit = data.produit ? String(data.produit) : "";
+      const secondary = [data.animal, data.fruit]
+        .filter((v) => v != null && String(v).trim() !== "")
+        .map(String).join(" / ");
+      const poidsTxt = data.poids != null && String(data.poids).trim() !== ""
+        ? `${data.poids} ${data.unite ?? ""}`.trim() : "";
+      const bagueTxt = data.bague && String(data.bague).trim() !== "" ? `Bague ${data.bague}` : "";
+      const rLines = [produit, secondary, poidsTxt, bagueTxt];
 
+      const availH = h - pad * 2;
+      const lineH = availH / 4;
+      const qrSize = availH - lineH - 0.3;
 
+      const fits = (sz: number) => {
+        if (sz * 0.42 > lineH - 0.2) return false;
+        doc.setFont("helvetica", "bold"); doc.setFontSize(sz);
+        const idW = id ? doc.getTextWidth(id) : 0;
+        const leftW = Math.max(qrSize, idW);
+        const txL = pad + leftW + 1.2;
+        const twL = w - txL - pad;
+        for (const ln of rLines) {
+          if (ln && doc.getTextWidth(ln) > twL) return false;
+        }
+        return true;
+      };
+      let sz = 16;
+      while (sz > 5 && !fits(sz)) sz -= 0.25;
+
+      doc.setFont("helvetica", "bold"); doc.setFontSize(sz);
+      const idW = id ? doc.getTextWidth(id) : 0;
+      const leftW = Math.max(qrSize, idW);
+
+      if (id) doc.text(id, pad, pad + sz * 0.42 + 0.2);
+
+      const qrX = pad + (leftW - qrSize) / 2;
+      const qrY = pad + lineH + 0.1;
+      doc.addImage(qr, "PNG", qrX, qrY, qrSize, qrSize);
+
+      const txR = pad + leftW + 1.2;
+      for (let li = 0; li < 4; li++) {
+        const ln = rLines[li];
+        if (!ln) continue;
+        const yL = pad + lineH * li + lineH - (lineH - sz * 0.42) / 2;
+        doc.text(ln, txR, yL);
+      }
+      continue;
+    }
 
     // Zone texte — occupe TOUT l'espace restant à droite du QR.
     const tx = portrait ? pad : qx + qrSize + pad * 1.5;
@@ -189,9 +238,7 @@ export async function generateLabelPdf(
     const th = portrait ? h - ty - pad : h - pad * 2;
     let y = ty;
 
-    // Tailles dimensionnées en fonction de la hauteur réellement disponible :
-    // étiquettes étroites comme 17×54 → texte agrandi pour remplir le ruban.
-    const tall = th >= 25;            // 62×30, 62×29 → 3-4 lignes confortables
+    const tall = th >= 25;
     const titleSize = portrait ? 11 : (tall ? 10 : 9);
     const bodySize = portrait ? 8 : (tall ? 7.5 : 7);
     const lh = portrait ? 3.6 : (tall ? 3.4 : 3.2);
@@ -201,19 +248,12 @@ export async function generateLabelPdf(
     if (data.id) { doc.text(String(data.id), tx, y, { maxWidth: tw }); }
     y += lh + 0.4;
 
-    // produit + animal : taille DOUBLÉE sur 62×30 et 17×54 (rouleaux étroits)
-    // pour maximiser la lisibilité à distance.
-    const isWide62x30 = isReducedRoll;
-    const boostProductAnimal = isWide62x30;
-    const productAnimalSize = boostProductAnimal ? bodySize * 2 : bodySize;
-    const productAnimalLh = boostProductAnimal ? lh * 1.9 : lh;
-
     const pa = [data.produit, data.animal].filter((v) => v != null && String(v).trim() !== "").join(" / ");
     if (pa) {
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(productAnimalSize);
+      doc.setFontSize(bodySize);
       doc.text(pa, tx, y, { maxWidth: tw });
-      y += productAnimalLh;
+      y += lh;
     }
 
     doc.setFont("helvetica", "normal");
