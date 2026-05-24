@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Printer, RotateCcw, Trash2, Download, FlaskConical } from "lucide-react";
+import { Printer, RotateCcw, Trash2, Download, FlaskConical, Eraser } from "lucide-react";
 import { toast } from "sonner";
 import { enqueuePrintJob } from "@/lib/print";
 
@@ -49,6 +49,25 @@ function ImpressionPage() {
     onSuccess: () => { toast.success("Job de test créé"); qc.invalidateQueries({ queryKey: ["print-jobs"] }); },
     onError: (e: any) => toast.error(e.message ?? "Erreur"),
   });
+
+  const clearDone = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("print_jobs").delete().in("status", ["printed", "error"]);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Historique vidé"); qc.invalidateQueries({ queryKey: ["print-jobs"] }); },
+    onError: (e: any) => toast.error(e.message ?? "Erreur"),
+  });
+
+  const clearAll = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("print_jobs").delete().not("id", "is", null);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("File entièrement vidée"); qc.invalidateQueries({ queryKey: ["print-jobs"] }); },
+    onError: (e: any) => toast.error(e.message ?? "Erreur"),
+  });
+
 
   function downloadPdf(j: any) {
     if (!j.pdf_base64) return toast.error("Pas de PDF disponible");
@@ -134,12 +153,21 @@ function ImpressionPage() {
         </AccordionItem>
       </Accordion>
 
-      <h2 className="font-semibold mb-3 flex items-center justify-between">
+      <h2 className="font-semibold mb-3 flex items-center justify-between flex-wrap gap-2">
         <span>File ({jobs.length})</span>
-        <Button size="sm" variant="outline" onClick={() => createTest.mutate()} disabled={createTest.isPending}>
-          <FlaskConical className="h-4 w-4 mr-1" /> Créer un job de test
-        </Button>
+        <div className="flex gap-2 flex-wrap">
+          <Button size="sm" variant="outline" onClick={() => createTest.mutate()} disabled={createTest.isPending}>
+            <FlaskConical className="h-4 w-4 mr-1" /> Job de test
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => { if (confirm("Supprimer tous les jobs imprimés et en erreur ?")) clearDone.mutate(); }} disabled={clearDone.isPending}>
+            <Eraser className="h-4 w-4 mr-1" /> Vider l'historique
+          </Button>
+          <Button size="sm" variant="destructive" onClick={() => { if (confirm("Supprimer TOUS les jobs (y compris en attente) ?")) clearAll.mutate(); }} disabled={clearAll.isPending}>
+            <Trash2 className="h-4 w-4 mr-1" /> Tout supprimer
+          </Button>
+        </div>
       </h2>
+
       <div className="space-y-2">
         {jobs.length === 0 && <p className="text-muted-foreground text-sm">Aucun travail d'impression.</p>}
         {jobs.map((j: any) => (
