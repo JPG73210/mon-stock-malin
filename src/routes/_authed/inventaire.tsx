@@ -134,6 +134,11 @@ function InventairePage() {
         addCounted({ id: prod.id, kind: "product", label: prod.produit, sub: [prod.animal, prod.fruit, prod.code, "hors périmètre"].filter(Boolean).join(" · "), code: prod.code, stockQty: prod.quantite ?? 0, raw: prod });
         return;
       }
+      const { data: wine } = await supabase.from("wines").select("*").eq("code_barre", c).is("deleted_at", null).maybeSingle();
+      if (wine) {
+        addCounted({ id: wine.id, kind: "wine", label: wine.chateau || "Vin", sub: [wine.couleur, wine.type_vin, wine.millesime, "hors périmètre"].filter(Boolean).join(" · "), code: wine.code_barre || "", stockQty: wine.quantite ?? 0, raw: wine });
+        return;
+      }
     }
     if (unknown.some((u) => u.code === raw)) { toast.error(`Code inconnu déjà scanné : ${raw}`); return; }
     setUnknown((p) => [{ code: raw, scannedAt: Date.now() }, ...p]);
