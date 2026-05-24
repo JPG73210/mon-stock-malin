@@ -1,7 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { LabelPreviewInline } from "@/components/LabelPreviewInline";
 import { ETIQUETTE_FORMATS } from "@/lib/constants";
-import { rollSpec } from "@/lib/print";
+import { rollSpec, enqueuePrintJob } from "@/lib/print";
+import { Button } from "@/components/ui/button";
+import { Printer } from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authed/etiquettes")({
   component: EtiquettesPage,
