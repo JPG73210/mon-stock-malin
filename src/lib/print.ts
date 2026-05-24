@@ -102,12 +102,14 @@ export async function generateLabelPdf(
         doc.setFontSize(8);
         doc.text(String(data.id), 3, 4.8, { maxWidth: w - 6 });
       }
-      // Animal : gras 32pt, rotation 90°, juste à droite du QR.
+      // Animal : horizontal, centré sous le QR, gras 10pt.
       if (data.animal) {
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(32);
-        const ax = qx + qrSize + 1; // 3 + 10 + 1 = 14 mm
-        doc.text(String(data.animal), ax, 9, { angle: 90, maxWidth: w - ax - 1 });
+        doc.setFontSize(10);
+        doc.text(String(data.animal), w / 2, h - 2, {
+          align: "center",
+          maxWidth: w - 2,
+        });
       }
       continue;
     }
