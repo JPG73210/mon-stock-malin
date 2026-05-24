@@ -91,8 +91,13 @@ export async function generateLabelPdf(
       ? Math.min(w - pad * 2, h * 0.6)
       : qrLandscape;
     // 23×23 : QR et ID maximisés, animal collé en bas.
+    const isNarrow17x54 = Math.abs(w - 54) < 0.5 && Math.abs(h - 17) < 0.5;
     const qrSize = square ? 15.5 : qrMax;
-    const qx = square ? (w - qrSize) / 2 : (portrait ? (w - qrSize) / 2 : pad);
+    // 17×54 : QR placé à DROITE du PDF (l'imprimante Brother inverse l'axe,
+    // donc il sort à gauche de l'étiquette physique côté utilisateur).
+    const qx = square
+      ? (w - qrSize) / 2
+      : (portrait ? (w - qrSize) / 2 : (isNarrow17x54 ? w - qrSize - pad : pad));
     const qy = square ? 4 : (portrait ? pad : (h - qrSize) / 2);
     doc.addImage(qr, "PNG", qx, qy, qrSize, qrSize);
 
