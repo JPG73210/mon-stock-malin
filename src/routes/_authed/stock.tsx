@@ -323,6 +323,7 @@ export function WinesList() {
         case "medailles": {
           const rank = (m: string[] | null) => {
             const arr = m ?? [];
+            if (arr.includes("reserve")) return 4;
             if (arr.includes("or")) return 3;
             if (arr.includes("argent")) return 2;
             if (arr.includes("bronze")) return 1;
