@@ -12,7 +12,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Camera, Save, Upload, X, Heart, Printer, Medal } from "lucide-react";
+import { Camera, Save, Upload, X, Heart, Printer, Trophy } from "lucide-react";
 import { CameraScanner } from "@/components/CameraScanner";
 import { ManagedSelect } from "@/components/ManagedSelect";
 import { RecentEntries } from "@/components/RecentEntries";
