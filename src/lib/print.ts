@@ -90,12 +90,11 @@ export async function generateLabelPdf(
     const qrMax = portrait
       ? Math.min(w - pad * 2, h * 0.6)
       : qrLandscape;
-    // 23×23 : QR et ID maximisés, animal collé en bas.
-    // 17×54 : désormais en portrait (17 large × 54 haut) — QR en haut, texte empilé.
-    const isNarrow17x54 = Math.abs(w - 17) < 0.5 && Math.abs(h - 54) < 0.5;
-    const qrSize = square ? 15.5 : (isNarrow17x54 ? Math.min(w - pad * 2, 16) : qrMax);
-    const qx = square || isNarrow17x54 || portrait ? (w - qrSize) / 2 : pad;
-    const qy = square ? 4 : (isNarrow17x54 ? pad : (portrait ? pad : (h - qrSize) / 2));
+    // 17×54 landscape : QR à GAUCHE du PDF, 2 lignes texte à droite.
+    const isNarrow17x54 = Math.abs(w - 54) < 0.5 && Math.abs(h - 17) < 0.5;
+    const qrSize = square ? 15.5 : (isNarrow17x54 ? Math.min(h - pad * 2, 15) : qrMax);
+    const qx = square ? (w - qrSize) / 2 : (portrait ? (w - qrSize) / 2 : pad);
+    const qy = square ? 4 : (portrait ? pad : (h - qrSize) / 2);
     doc.addImage(qr, "PNG", qx, qy, qrSize, qrSize);
 
     if (square) {
@@ -117,32 +116,36 @@ export async function generateLabelPdf(
       continue;
     }
 
-    // 17×54 portrait : QR centré en haut, infos empilées dessous, centrées.
+    // 17×54 landscape : QR à gauche, 2 lignes texte à droite (id+date, puis produit+animal+version).
     if (isNarrow17x54) {
-      const cx = w / 2;
-      let yy = qy + qrSize + 2.5;
-      const drawLine = (txt: string, size: number, bold: boolean) => {
-        doc.setFont("helvetica", bold ? "bold" : "normal");
-        let s = size;
-        doc.setFontSize(s);
-        while (doc.getTextWidth(txt) > w - pad * 2 && s > 4.5) {
-          s -= 0.5;
-          doc.setFontSize(s);
-        }
-        doc.text(txt, cx, yy, { align: "center", maxWidth: w - pad * 2 });
-        yy += s * 0.42 + 1.4;
-      };
-      if (data.id) drawLine(String(data.id), 8, true);
-      if (data.date) drawLine(String(data.date), 6.5, false);
-      const pa = [data.produit, data.animal || data.fruit]
+      const txN = qx + qrSize + 1.5;
+      const twN = w - txN - pad;
+      const l1y = h / 2 - 1.2;
+      const l2y = h / 2 + 4.8;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      if (data.id) doc.text(String(data.id), txN, l1y, { maxWidth: twN });
+      if (data.date) {
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(7);
+        doc.text(String(data.date), txN + twN, l1y, { align: "right", maxWidth: twN });
+      }
+      const l2 = [data.produit, data.animal || data.fruit, data.version]
         .filter((v) => v != null && String(v).trim() !== "")
         .map(String).join(" · ");
-      if (pa) drawLine(pa, 7.5, true);
-      if (data.version && String(data.version).trim() !== "") {
-        drawLine(String(data.version), 6.5, false);
+      if (l2) {
+        doc.setFont("helvetica", "bold");
+        let size = 8;
+        doc.setFontSize(size);
+        while (doc.getTextWidth(l2) > twN && size > 5) {
+          size -= 0.5;
+          doc.setFontSize(size);
+        }
+        doc.text(l2, txN, l2y, { maxWidth: twN });
       }
       continue;
     }
+
 
     // Zone texte — occupe TOUT l'espace restant à droite du QR.
     const tx = portrait ? pad : qx + qrSize + pad * 1.5;
