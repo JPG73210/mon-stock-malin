@@ -89,21 +89,20 @@ export async function generateLabelPdf(
     const qrMax = portrait
       ? Math.min(w - pad * 2, h * 0.6)
       : qrLandscape;
-    const qrSize = square ? Math.min(w, h) * 0.6 : qrMax;
-    const qx = square ? pad : (portrait ? (w - qrSize) / 2 : pad);
-    const qy = square ? pad : (portrait ? pad : (h - qrSize) / 2);
+    // 23×23 : QR positionné précisément (origine = coin supérieur gauche).
+    const qrSize = square ? 13 : qrMax;
+    const qx = square ? 3 : (portrait ? (w - qrSize) / 2 : pad);
+    const qy = square ? 9 : (portrait ? pad : (h - qrSize) / 2);
     doc.addImage(qr, "PNG", qx, qy, qrSize, qrSize);
 
     if (square) {
-      // 23×23 : QR à gauche, animal + N°ID à droite (très compact).
-      const tx2 = qx + qrSize + 0.8;
-      const tw2 = w - tx2 - pad;
+      // 23×23 : animal + N°ID au-dessus du QR (zone haute libre : 0 → 9 mm).
       doc.setFont("helvetica", "bold");
       doc.setFontSize(5);
-      if (data.animal) doc.text(String(data.animal), tx2, pad + 2, { maxWidth: tw2 });
+      if (data.animal) doc.text(String(data.animal), 3, 3, { maxWidth: w - 4 });
       doc.setFont("helvetica", "normal");
       doc.setFontSize(4.5);
-      if (data.id) doc.text(`N°${data.id}`, tx2, pad + 4.8, { maxWidth: tw2 });
+      if (data.id) doc.text(`N°${data.id}`, 3, 6, { maxWidth: w - 4 });
       continue;
     }
 
