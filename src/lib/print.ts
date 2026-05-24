@@ -83,6 +83,18 @@ export async function generateLabelPdf(
     const pad = 1;
     const portrait = h > w * 1.4; // tall labels → QR en haut, texte en bas
     const square   = Math.abs(w - h) < 2; // labels carrés (23×23) → QR + animal + ID compact
+    const isWineSquare = normalizeFormat(fmt) === "23x23v";
+
+    // Cas spécial : 23×23 vin — QR centré tout seul, prend toute la place.
+    if (isWineSquare) {
+      doc.setFillColor(255, 255, 255);
+      doc.rect(0, 0, w, h, "F");
+      const qrSide = Math.min(w, h) - pad * 2;
+      const qrx = (w - qrSide) / 2;
+      const qry = (h - qrSide) / 2;
+      doc.addImage(qr, "PNG", qrx, qry, qrSide, qrSide);
+      continue;
+    }
 
     // QR : toujours carré, jamais distordu.
     // 62×25 (continu) → layout dédié ci-dessous (QR redessiné, on saute le calcul générique).
@@ -98,6 +110,7 @@ export async function generateLabelPdf(
     const qx = square ? (w - qrSize) / 2 : (portrait ? (w - qrSize) / 2 : pad);
     const qy = square ? 4 : (portrait ? pad : (h - qrSize) / 2);
     doc.addImage(qr, "PNG", qx, qy, qrSize, qrSize);
+
 
     if (square) {
       // 23×23 : ID au-dessus du QR — gras, taille max.
