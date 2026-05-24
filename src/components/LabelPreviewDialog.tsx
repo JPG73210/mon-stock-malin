@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { generateLabelPdf, formatSize, type LabelData } from "@/lib/print";
+import { LabelPreviewInline } from "@/components/LabelPreviewInline";
 import { Download, X } from "lucide-react";
 
 export function LabelPreviewDialog({
@@ -31,9 +32,6 @@ export function LabelPreviewDialog({
     return () => { if (revoke) URL.revokeObjectURL(revoke); setUrl(null); };
   }, [open, fmt, data]);
 
-  // Affichage à l'échelle : 1 mm ≈ 6 px (≈ 150 dpi à l'écran)
-  const px = 6;
-
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-2xl">
@@ -41,21 +39,9 @@ export function LabelPreviewDialog({
           <DialogTitle>Aperçu étiquette {w}×{h} mm</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col items-center gap-3">
-          <div
-            className="border-2 border-dashed border-primary/40 bg-white shadow-sm overflow-hidden"
-            style={{ width: w * px, height: h * px }}
-          >
-            {url && (
-              <iframe
-                src={`${url}#toolbar=0&navpanes=0&scrollbar=0&view=Fit`}
-                title="Aperçu étiquette"
-                className="w-full h-full"
-                style={{ border: 0 }}
-              />
-            )}
-          </div>
+          <LabelPreviewInline fmt={fmt} data={data} scale={6} />
           <p className="text-xs text-muted-foreground">
-            Échelle réelle (1&nbsp;mm ≈ {px}&nbsp;px). Cadre pointillé = bord physique de l'étiquette.
+            Échelle réelle (1&nbsp;mm ≈ 6&nbsp;px). Cadre pointillé = bord physique de l'étiquette.
           </p>
         </div>
         <DialogFooter>
