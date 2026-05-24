@@ -116,7 +116,7 @@ function VinPage() {
 
   return (
     <div className="p-6 md:p-8 max-w-5xl">
-      <h1 className="text-3xl font-bold mb-2">Entrée — Vin</h1>
+      <h1 className="text-3xl font-bold mb-2">Étiquette — Vin</h1>
       <p className="text-muted-foreground mb-6">Code-barres EAN supporté (douchette ou caméra).</p>
 
       <div className="grid md:grid-cols-3 gap-6">
