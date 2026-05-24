@@ -116,40 +116,80 @@ export async function generateLabelPdf(
       continue;
     }
 
-    // 17×54 paysage : QR à gauche centré verticalement, 2 lignes texte à droite.
-    //   ligne 1 : ID  ·  date
-    //   ligne 2 : produit · animal/fruit · version
+    // 17×54 paysage — layout calqué sur la maquette P-touch Editor :
+    //   colonne gauche : ID (haut)     + QR (bas)
+    //   colonne centre : Produit (haut) / Animal (bas)
+    //   coin haut droit : Poids
+    //   bas droite (gros) : Date
     if (isNarrow17x54) {
-      const txN = qx + qrSize + 1.5;
-      const twN = w - txN - pad;
-      const l1y = h / 2 - 1.2;
-      const l2y = h / 2 + 4.8;
-      // Ligne 1 : ID (gras) suivi de la date (normal) — sur la même ligne.
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(9);
-      const idStr = data.id ? String(data.id) : "";
-      if (idStr) doc.text(idStr, txN, l1y, { maxWidth: twN });
-      if (data.date) {
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(7);
-        doc.text(String(data.date), txN + twN, l1y, { align: "right", maxWidth: twN });
-      }
-      // Ligne 2 : produit · animal/fruit · version
-      const l2 = [data.produit, data.animal || data.fruit, data.version]
-        .filter((v) => v != null && String(v).trim() !== "")
-        .map(String).join(" · ");
-      if (l2) {
+      // Colonne gauche
+      const leftX = pad + 0.5;
+      // ID au-dessus du QR
+      if (data.id) {
         doc.setFont("helvetica", "bold");
-        let size = 8;
-        doc.setFontSize(size);
-        while (doc.getTextWidth(l2) > twN && size > 5) {
-          size -= 0.5;
-          doc.setFontSize(size);
+        doc.setFontSize(5.5);
+        doc.text(String(data.id), leftX, 3.6, { maxWidth: 13 });
+      }
+      // QR sous l'ID, à gauche
+      const qrL = 10.5;
+      // Re-placer le QR au bon endroit (le rendu précédent en haut-gauche existe déjà,
+      // mais ici on a forcé qx=pad et qy=(h-qrSize)/2 = 1, donc le QR est centré
+      // verticalement — on redessine par-dessus à la position voulue).
+      doc.setFillColor(255, 255, 255);
+      doc.rect(0, 0, w, h, "F");
+      doc.addImage(qr, "PNG", leftX, h - qrL - 0.6, qrL, qrL);
+      if (data.id) {
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(5.5);
+        doc.text(String(data.id), leftX, 3.6, { maxWidth: 13 });
+      }
+
+      // Colonne centre — Produit / Animal (ou Fruit)
+      const midX = 14.5;
+      const midW = 27;
+      doc.setFont("helvetica", "bold");
+      if (data.produit) {
+        doc.setFontSize(6);
+        doc.text(String(data.produit), midX, 4.5, { maxWidth: midW });
+      }
+      const secondary = data.animal || data.fruit;
+      if (secondary) {
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(6);
+        doc.text(String(secondary), midX, 9.5, { maxWidth: midW });
+      }
+
+      // Coin haut droit — Poids
+      const rightX = w - pad - 0.5;
+      if (data.poids != null && String(data.poids).trim() !== "") {
+        const poidsTxt = `${data.poids}${data.unite ? " " + data.unite : ""}`.trim();
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(4.5);
+        doc.text(poidsTxt, rightX, 3.6, { align: "right", maxWidth: 12 });
+      }
+
+      // Bas droite — Date (grand)
+      if (data.date) {
+        doc.setFont("helvetica", "bold");
+        let s = 9;
+        doc.setFontSize(s);
+        const maxDateW = 30;
+        while (doc.getTextWidth(String(data.date)) > maxDateW && s > 5) {
+          s -= 0.5;
+          doc.setFontSize(s);
         }
-        doc.text(l2, txN, l2y, { maxWidth: twN });
+        doc.text(String(data.date), rightX, h - 1.2, { align: "right", maxWidth: maxDateW });
+      }
+
+      // Version (si présente) — petit, sous Poids
+      if (data.version && String(data.version).trim() !== "") {
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(4.5);
+        doc.text(String(data.version), rightX, 7, { align: "right", maxWidth: 12 });
       }
       continue;
     }
+
 
 
 
