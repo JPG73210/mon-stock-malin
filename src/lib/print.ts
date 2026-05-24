@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
  *  - "62"     → DK-44205 (rouleau CONTINU amovible, largeur 62 mm).
  *               Longueur logicielle = 30 mm (modifiable dans ROLL_SPECS).
  */
-export type LabelFormat = "23x23" | "17x54" | "62x29" | "62x100" | "62";
+export type LabelFormat = "23x23" | "23x23v" | "17x54" | "62x29" | "62x100" | "62";
 
 export type LabelData = {
   id: string;
@@ -34,10 +34,11 @@ export const ROLL_SPECS: Record<LabelFormat, {
   continuous: boolean;
   cupsMedia: string;    // option `lp -o media=` pour CUPS
 }> = {
-  "23x23":  { dk: "DK-11221", label: "Carrée 23×23",      mediaWidth: 23, mediaHeight: 23,  printable: { w: 23, h: 23  }, continuous: false, cupsMedia: "Custom.23x23mm"  },
-  "17x54":  { dk: "DK-11204", label: "54×17 paysage",     mediaWidth: 54, mediaHeight: 17,  printable: { w: 54, h: 17  }, continuous: false, cupsMedia: "Custom.54x17mm"  },
-  "62x29":  { dk: "DK-11209", label: "29×62 petite adr.", mediaWidth: 62, mediaHeight: 29,  printable: { w: 62, h: 29  }, continuous: false, cupsMedia: "Custom.29x62mm"  },
-  "62x100": { dk: "DK-11202", label: "62×100 expédition", mediaWidth: 62, mediaHeight: 100, printable: { w: 62, h: 100 }, continuous: false, cupsMedia: "Custom.62x100mm" },
+  "23x23":  { dk: "DK-11221", label: "Carrée 23×23",         mediaWidth: 23, mediaHeight: 23,  printable: { w: 23, h: 23  }, continuous: false, cupsMedia: "Custom.23x23mm"  },
+  "23x23v": { dk: "DK-11221", label: "Carrée 23×23 (vin)",   mediaWidth: 23, mediaHeight: 23,  printable: { w: 23, h: 23  }, continuous: false, cupsMedia: "Custom.23x23mm"  },
+  "17x54":  { dk: "DK-11204", label: "54×17 paysage",        mediaWidth: 54, mediaHeight: 17,  printable: { w: 54, h: 17  }, continuous: false, cupsMedia: "Custom.54x17mm"  },
+  "62x29":  { dk: "DK-11209", label: "29×62 petite adr.",    mediaWidth: 62, mediaHeight: 29,  printable: { w: 62, h: 29  }, continuous: false, cupsMedia: "Custom.29x62mm"  },
+  "62x100": { dk: "DK-11202", label: "62×100 expédition",    mediaWidth: 62, mediaHeight: 100, printable: { w: 62, h: 100 }, continuous: false, cupsMedia: "Custom.62x100mm" },
   "62":     { dk: "DK-44205", label: "Continu 62 mm (25 mm)", mediaWidth: 62, mediaHeight: 25, printable: { w: 62, h: 25 }, continuous: true, cupsMedia: "Custom.62x25mm" },
 };
 
@@ -47,9 +48,11 @@ function normalizeFormat(fmt: string): LabelFormat {
   if (f === "62x29" || f === "29x62") return "62x29";
   if (f === "62x100" || f === "100x62") return "62x100";
   if (f === "17x54" || f === "54x17") return "17x54";
+  if (f === "23x23v") return "23x23v";
   if (f === "23x23") return "23x23";
   return "62";
 }
+
 
 export function formatSize(fmt: string): { w: number; h: number } {
   const s = ROLL_SPECS[normalizeFormat(fmt)];
