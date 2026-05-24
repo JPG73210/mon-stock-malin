@@ -78,6 +78,32 @@ export function WineEditDialog({
             <Label className="flex items-center gap-1"><Heart className="h-4 w-4 text-accent" /> À racheter</Label>
           </div>
         </div>
+        <div className="p-3 rounded-md border">
+          <p className="text-sm font-medium mb-2">Médailles</p>
+          <div className="flex gap-2">
+            {(["or", "argent", "bronze"] as const).map((m) => {
+              const list: string[] = f.medailles ?? [];
+              const active = list.includes(m);
+              return (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => setF({
+                    ...f,
+                    medailles: active ? list.filter((x) => x !== m) : [...list, m],
+                  })}
+                  className={cn(
+                    "flex flex-col items-center gap-1 rounded-md border p-3 transition w-20",
+                    active ? "border-primary bg-primary/10" : "border-input hover:bg-muted",
+                  )}
+                >
+                  <Trophy className={cn("h-6 w-6", MEDAL_COLORS[m])} />
+                  <span className="text-xs capitalize">{m}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
         <Row l="Notes"><Textarea value={f.notes ?? ""} onChange={(e) => setF({ ...f, notes: e.target.value })} rows={2} /></Row>
         <DialogFooter>
           <Button variant="destructive" onClick={() => del.mutate()} disabled={del.isPending}>
