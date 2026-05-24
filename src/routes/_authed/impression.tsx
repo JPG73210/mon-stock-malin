@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Printer, RotateCcw, Trash2, Download, FlaskConical } from "lucide-react";
+import { Printer, RotateCcw, Trash2, Download, FlaskConical, Eraser } from "lucide-react";
 import { toast } from "sonner";
 import { enqueuePrintJob } from "@/lib/print";
 
