@@ -19,8 +19,8 @@ const NAV = [
   { to: "/impression", label: "Impression", icon: Printer },
   { to: "/import", label: "Import CSV", icon: Upload },
   { to: "/sauvegarde", label: "Sauvegarde", icon: Save },
-  { to: "/corbeille", label: "Corbeille", icon: Trash2 },
   { to: "/sorties", label: "Sorties de stock", icon: ArrowLeftRight },
+  { to: "/corbeille", label: "Corbeille", icon: Trash2 },
 ] as const;
 
 export function AppShell() {
