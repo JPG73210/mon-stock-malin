@@ -96,13 +96,19 @@ export async function generateLabelPdf(
     doc.addImage(qr, "PNG", qx, qy, qrSize, qrSize);
 
     if (square) {
-      // 23×23 : animal + N°ID au-dessus du QR (zone haute libre : 0 → 9 mm).
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(5);
-      if (data.animal) doc.text(String(data.animal), 3, 3, { maxWidth: w - 4 });
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(4.5);
-      if (data.id) doc.text(`N°${data.id}`, 3, 6, { maxWidth: w - 4 });
+      // 23×23 : ID au-dessus du QR — gras 14pt, boîte 3,2 mm (l.17 × h.6).
+      if (data.id) {
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(14);
+        // baseline ≈ top + fontSize(mm) ; 14pt ≈ 4,94 mm → y ≈ 2 + 4,94
+        doc.text(String(data.id), 3, 6.9, { maxWidth: 17 });
+      }
+      // Animal : gras 32pt, boîte 15,9 mm (l.5 × h.12), rotation 90°.
+      if (data.animal) {
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(32);
+        doc.text(String(data.animal), 15, 9, { angle: 90, maxWidth: 12 });
+      }
       continue;
     }
 
