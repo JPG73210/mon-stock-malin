@@ -188,46 +188,105 @@ function InventairePage() {
       </div>
 
       {!started ? (
-        <div className="rounded-xl border bg-card p-4 space-y-3">
+        <div className="rounded-xl border bg-card p-4 space-y-4">
           <p className="font-semibold">Démarrer une session</p>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div>
-              <Label>Produit</Label>
-              <Select value={filtProduit} onValueChange={setFiltProduit}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">Tous</SelectItem>
-                  {produits.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                </SelectContent>
-              </Select>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-muted-foreground">Produits</p>
+              <div>
+                <Label>Produit</Label>
+                <Select value={filtProduit} onValueChange={setFiltProduit}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">Tous</SelectItem>
+                    {produits.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Animal</Label>
+                <Select value={filtAnimal} onValueChange={setFiltAnimal}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">Tous</SelectItem>
+                    {animaux.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Fruit / Légume</Label>
+                <Select value={filtFruit} onValueChange={setFiltFruit}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">Tous</SelectItem>
+                    {fruits.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div>
-              <Label>Animal</Label>
-              <Select value={filtAnimal} onValueChange={setFiltAnimal}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">Tous</SelectItem>
-                  {animaux.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Fruit / Légume</Label>
-              <Select value={filtFruit} onValueChange={setFiltFruit}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">Tous</SelectItem>
-                  {fruits.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                </SelectContent>
-              </Select>
+
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-muted-foreground">Vins</p>
+              <div>
+                <Label>Nom de domaine</Label>
+                <Select value={filtChateau} onValueChange={setFiltChateau}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">Tous</SelectItem>
+                    {chateaux.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Couleur</Label>
+                <Select value={filtCouleur} onValueChange={setFiltCouleur}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">Toutes</SelectItem>
+                    {couleurs.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Médaille</Label>
+                <Select value={filtMedaille} onValueChange={setFiltMedaille}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">Toutes</SelectItem>
+                    {medailles.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Type de vin</Label>
+                <Select value={filtTypeVin} onValueChange={setFiltTypeVin}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">Tous</SelectItem>
+                    {typesVin.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Millésime</Label>
+                <Select value={filtMillesime} onValueChange={setFiltMillesime}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">Tous</SelectItem>
+                    {millesimes.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
+
           <div className="flex items-center gap-2">
             <Checkbox checked={autoSortir} onCheckedChange={(v) => setAutoSortir(!!v)} />
             <Label className="text-sm">Envoyer automatiquement les produits manquants en sortie de stock</Label>
           </div>
           <Button onClick={start}><Play className="mr-2 h-4 w-4" /> Démarrer</Button>
         </div>
+
       ) : (
         <>
           <div className="rounded-xl border bg-card p-3 space-y-3 sticky top-0 z-10">
