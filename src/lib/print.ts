@@ -35,7 +35,7 @@ export const ROLL_SPECS: Record<LabelFormat, {
   cupsMedia: string;    // option `lp -o media=` pour CUPS
 }> = {
   "23x23":  { dk: "DK-11221", label: "Carrée 23×23",      mediaWidth: 23, mediaHeight: 23,  printable: { w: 23, h: 23  }, continuous: false, cupsMedia: "Custom.23x23mm"  },
-  "17x54":  { dk: "DK-11204", label: "17×54 adresse",     mediaWidth: 17, mediaHeight: 54,  printable: { w: 54, h: 17  }, continuous: false, cupsMedia: "Custom.17x54mm"  },
+  "17x54":  { dk: "DK-11204", label: "17×54 adresse",     mediaWidth: 17, mediaHeight: 54,  printable: { w: 17, h: 54  }, continuous: false, cupsMedia: "Custom.17x54mm"  },
   "62x29":  { dk: "DK-11209", label: "29×62 petite adr.", mediaWidth: 62, mediaHeight: 29,  printable: { w: 62, h: 29  }, continuous: false, cupsMedia: "Custom.29x62mm"  },
   "62x100": { dk: "DK-11202", label: "62×100 expédition", mediaWidth: 62, mediaHeight: 100, printable: { w: 62, h: 100 }, continuous: false, cupsMedia: "Custom.62x100mm" },
   "62":     { dk: "DK-44205", label: "Continu 62 mm (30 mm)", mediaWidth: 62, mediaHeight: 30, printable: { w: 62, h: 30 }, continuous: true, cupsMedia: "Custom.62x30mm" },
