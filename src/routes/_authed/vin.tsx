@@ -214,7 +214,7 @@ function VinPage() {
                       active ? "border-primary bg-primary/10" : "border-input hover:bg-muted",
                     )}
                   >
-                    <Medal className={cn("h-6 w-6", MEDAL_COLORS[m])} />
+                    <Trophy className={cn("h-6 w-6", MEDAL_COLORS[m])} />
                     <span className="text-xs capitalize">{m}</span>
                   </button>
                 );
