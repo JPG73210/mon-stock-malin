@@ -114,7 +114,7 @@ function EntreePage() {
     id: f.use_legacy ? (f.legacy_code || "—") : "AA-XXX",
     produit: f.produit, animal: f.animal, fruit: f.fruit,
     bague: f.bague, date: f.date_creation,
-    poids: f.poids, unite: f.unite_poids,
+    poids: f.poids, unite: f.unite_poids, version: f.version,
   };
 
   return (
