@@ -205,7 +205,7 @@ export async function generateLabelPdf(
         .map(String).join(" / ");
       const poidsTxt = data.poids != null && String(data.poids).trim() !== ""
         ? `${data.poids} ${data.unite ?? ""}`.trim() : "";
-      const bagueTxt = data.bague && String(data.bague).trim() !== "" ? `Bague ${data.bague}` : "";
+      const bagueTxt = data.bague && String(data.bague).trim() !== "" ? `${data.bague}` : "";
       const rLines = [produit, secondary, poidsTxt, bagueTxt];
 
       const availH = h - pad * 2;
@@ -279,7 +279,7 @@ export async function generateLabelPdf(
       doc.text(String(data.fruit), tx, y, { maxWidth: tw }); y += lh;
     }
     const poidsTxt = data.poids != null && String(data.poids).trim() !== "" ? `${data.poids} ${data.unite ?? ""}`.trim() : "";
-    const bagueTxt = data.bague && String(data.bague).trim() !== "" ? `Bague ${data.bague}` : "";
+    const bagueTxt = data.bague && String(data.bague).trim() !== "" ? `${data.bague}` : "";
     const l2 = [poidsTxt, bagueTxt].filter(Boolean).join(" · ");
     if (l2) { doc.text(l2, tx, y, { maxWidth: tw }); y += lh; }
     if (data.date && String(data.date).trim() !== "") doc.text(String(data.date), tx, y, { maxWidth: tw });
