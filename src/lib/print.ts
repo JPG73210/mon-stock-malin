@@ -89,26 +89,26 @@ export async function generateLabelPdf(
     const qrMax = portrait
       ? Math.min(w - pad * 2, h * 0.6)
       : qrLandscape;
-    // 23×23 : QR remonté et agrandi (12 mm) tout en laissant la place au texte.
+    // 23×23 : marges supprimées — QR centré, ID et animal collés aux bords.
     const qrSize = square ? 12 : qrMax;
-    const qx = square ? 3 : (portrait ? (w - qrSize) / 2 : pad);
-    const qy = square ? 6.5 : (portrait ? pad : (h - qrSize) / 2);
+    const qx = square ? (w - qrSize) / 2 : (portrait ? (w - qrSize) / 2 : pad);
+    const qy = square ? 4 : (portrait ? pad : (h - qrSize) / 2);
     doc.addImage(qr, "PNG", qx, qy, qrSize, qrSize);
 
     if (square) {
-      // 23×23 : ID au-dessus du QR — gras 10pt.
+      // 23×23 : ID au-dessus du QR — gras 10pt, centré sans marge.
       if (data.id) {
         doc.setFont("helvetica", "bold");
         doc.setFontSize(10);
-        doc.text(String(data.id), 3, 5.2, { maxWidth: w - 6 });
+        doc.text(String(data.id), w / 2, 3, { align: "center", maxWidth: w });
       }
-      // Animal : horizontal, centré sous le QR, gras 10pt.
+      // Animal : horizontal, centré sous le QR, gras 10pt, collé au bord bas.
       if (data.animal) {
         doc.setFont("helvetica", "bold");
         doc.setFontSize(10);
-        doc.text(String(data.animal), w / 2, h - 2, {
+        doc.text(String(data.animal), w / 2, h - 0.5, {
           align: "center",
-          maxWidth: w - 2,
+          maxWidth: w,
         });
       }
       continue;
