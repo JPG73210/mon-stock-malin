@@ -19,6 +19,7 @@ import { RecentEntries } from "@/components/RecentEntries";
 import { QrCode } from "@/components/QrCode";
 import { enqueuePrintJob } from "@/lib/print";
 import { cn } from "@/lib/utils";
+import coffreReserve from "@/assets/coffre-reserve.png";
 
 export const Route = createFileRoute("/_authed/vin")({ component: VinPage });
 
@@ -40,6 +41,13 @@ const MEDAL_COLORS: Record<string, string> = {
   or: "text-yellow-500",
   argent: "text-zinc-400",
   bronze: "text-amber-700",
+};
+
+const MEDAL_LABELS: Record<string, string> = {
+  or: "Or",
+  argent: "Argent",
+  bronze: "Bronze",
+  reserve: "Vieille Réserve",
 };
 
 function VinPage() {
@@ -203,8 +211,8 @@ function VinPage() {
           {/* Médailles */}
           <div className="p-3 rounded-md border">
             <p className="text-sm font-medium mb-2">Médailles</p>
-            <div className="flex gap-2">
-              {(["or", "argent", "bronze"] as const).map((m) => {
+            <div className="flex gap-2 flex-wrap">
+              {(["or", "argent", "bronze", "reserve"] as const).map((m) => {
                 const active = f.medailles.includes(m);
                 return (
                   <button
@@ -212,12 +220,16 @@ function VinPage() {
                     type="button"
                     onClick={() => toggleMedal(m)}
                     className={cn(
-                      "flex flex-col items-center gap-1 rounded-md border p-3 transition w-20",
+                      "flex flex-col items-center gap-1 rounded-md border p-3 transition w-24",
                       active ? "border-primary bg-primary/10" : "border-input hover:bg-muted",
                     )}
                   >
-                    <Trophy className={cn("h-6 w-6", MEDAL_COLORS[m])} />
-                    <span className="text-xs capitalize">{m}</span>
+                    {m === "reserve" ? (
+                      <img src={coffreReserve} alt="" className="h-6 w-6 object-contain" />
+                    ) : (
+                      <Trophy className={cn("h-6 w-6", MEDAL_COLORS[m])} />
+                    )}
+                    <span className="text-[11px] text-center leading-tight">{MEDAL_LABELS[m]}</span>
                   </button>
                 );
               })}
@@ -253,7 +265,9 @@ function VinPage() {
             <p>Code-barres&nbsp;: {f.code_barre || "—"}</p>
             {f.medailles.length > 0 && (
               <p className="flex items-center gap-1">Médailles&nbsp;:
-                {f.medailles.map((m) => <Trophy key={m} className={cn("h-4 w-4", MEDAL_COLORS[m])} />)}
+                {f.medailles.map((m) => m === "reserve"
+                  ? <img key={m} src={coffreReserve} alt="" className="h-4 w-4 object-contain" />
+                  : <Trophy key={m} className={cn("h-4 w-4", MEDAL_COLORS[m])} />)}
               </p>
             )}
           </div>

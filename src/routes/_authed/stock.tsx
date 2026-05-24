@@ -22,6 +22,12 @@ import { WineEditDialog } from "@/components/WineEditDialog";
 import { LabelPreviewDialog } from "@/components/LabelPreviewDialog";
 import { useSelection } from "@/hooks/use-selection";
 import { cn } from "@/lib/utils";
+import coffreReserve from "@/assets/coffre-reserve.png";
+
+function MedalIcon({ m, className }: { m: string; className?: string }) {
+  if (m === "reserve") return <img src={coffreReserve} alt="" className={cn("object-contain", className)} />;
+  return <Medal className={cn(className, MEDAL_COLORS[m])} />;
+}
 
 export const Route = createFileRoute("/_authed/stock")({ component: StockPage });
 
@@ -317,6 +323,7 @@ export function WinesList() {
         case "medailles": {
           const rank = (m: string[] | null) => {
             const arr = m ?? [];
+            if (arr.includes("reserve")) return 4;
             if (arr.includes("or")) return 3;
             if (arr.includes("argent")) return 2;
             if (arr.includes("bronze")) return 1;
@@ -411,7 +418,7 @@ export function WinesList() {
               <p className="text-xs mt-0.5">{w.millesime ?? "—"} · ×{w.quantite}</p>
               <div className="flex items-center gap-1 mt-1">
                 {(w.medailles ?? []).map((m: string) => (
-                  <Medal key={m} className={cn("h-4 w-4", MEDAL_COLORS[m])} />
+                  <MedalIcon key={m} m={m} className="h-4 w-4" />
                 ))}
                 {w.comme_racheter && <Badge variant="outline" className="text-[10px] h-4 px-1">comme</Badge>}
               </div>
@@ -444,7 +451,7 @@ export function WinesList() {
                   <Info l="Favori" v={selected.favori ? "Oui" : "Non"} />
                   {(selected.medailles ?? []).length > 0 && (
                     <p className="flex items-center gap-1"><span className="text-muted-foreground">Médailles :</span>
-                      {selected.medailles.map((m: string) => <Medal key={m} className={cn("h-4 w-4", MEDAL_COLORS[m])} />)}
+                      {selected.medailles.map((m: string) => <MedalIcon key={m} m={m} className="h-4 w-4" />)}
                     </p>
                   )}
                 </div>
