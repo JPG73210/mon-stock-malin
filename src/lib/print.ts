@@ -82,11 +82,10 @@ export async function generateLabelPdf(
     const square   = Math.abs(w - h) < 2; // labels carrés (23×23) → QR + animal + ID compact
 
     // QR : toujours carré, jamais distordu.
-    // 62×30 (continu) → QR réduit d'1/3 (étiquette spécifiquement étroite).
+    // 62×25 (continu) → layout dédié ci-dessous (QR redessiné, on saute le calcul générique).
     // Autres landscape (17×54, 62×29…) → QR = pleine hauteur pour libérer texte.
-    const isReducedRoll = Math.abs(w - 62) < 0.5 && Math.abs(h - 30) < 0.5;
-    const qrLandscapeFull = Math.min(w * 0.5, h - pad * 2);
-    const qrLandscape = isReducedRoll ? qrLandscapeFull * (2 / 3) : qrLandscapeFull;
+    const isReducedRoll = Math.abs(w - 62) < 0.5 && Math.abs(h - 25) < 0.5;
+    const qrLandscape = Math.min(w * 0.5, h - pad * 2);
     const qrMax = portrait
       ? Math.min(w - pad * 2, h * 0.6)
       : qrLandscape;
