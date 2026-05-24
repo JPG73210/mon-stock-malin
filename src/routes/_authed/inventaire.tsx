@@ -25,6 +25,11 @@ function InventairePage() {
   const [filtProduit, setFiltProduit] = useState<string>("__all__");
   const [filtAnimal, setFiltAnimal] = useState<string>("__all__");
   const [filtFruit, setFiltFruit] = useState<string>("__all__");
+  const [filtChateau, setFiltChateau] = useState<string>("__all__");
+  const [filtCouleur, setFiltCouleur] = useState<string>("__all__");
+  const [filtMedaille, setFiltMedaille] = useState<string>("__all__");
+  const [filtTypeVin, setFiltTypeVin] = useState<string>("__all__");
+  const [filtMillesime, setFiltMillesime] = useState<string>("__all__");
   const [autoSortir, setAutoSortir] = useState(false);
   const [started, setStarted] = useState(false);
   const [input, setInput] = useState("");
@@ -42,12 +47,26 @@ function InventairePage() {
     },
   });
 
+  const { data: wines = [] } = useQuery({
+    queryKey: ["inv-wines"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("wines").select("*").is("deleted_at", null).gt("quantite", 0);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
   const produits = useMemo(() => Array.from(new Set(products.map((p: any) => p.produit).filter(Boolean))).sort(), [products]);
   const animaux = useMemo(() => Array.from(new Set(products.map((p: any) => p.animal).filter(Boolean))).sort(), [products]);
   const fruits = useMemo(() => Array.from(new Set(products.map((p: any) => p.fruit).filter(Boolean))).sort(), [products]);
+  const chateaux = useMemo(() => Array.from(new Set(wines.map((w: any) => w.chateau).filter(Boolean))).sort(), [wines]);
+  const couleurs = useMemo(() => Array.from(new Set(wines.map((w: any) => w.couleur).filter(Boolean))).sort(), [wines]);
+  const typesVin = useMemo(() => Array.from(new Set(wines.map((w: any) => w.type_vin).filter(Boolean))).sort(), [wines]);
+  const millesimes = useMemo(() => Array.from(new Set(wines.map((w: any) => w.millesime).filter(Boolean))).sort((a: any, b: any) => b - a).map(String), [wines]);
+  const medailles = useMemo(() => Array.from(new Set(wines.flatMap((w: any) => w.medailles ?? []).filter(Boolean))).sort(), [wines]);
 
   const scopeItems: Item[] = useMemo(() => {
-    return products
+    const prodItems = products
       .filter((p: any) => {
         if (filtProduit !== "__all__" && p.produit !== filtProduit) return false;
         if (filtAnimal !== "__all__" && p.animal !== filtAnimal) return false;
@@ -59,7 +78,23 @@ function InventairePage() {
         sub: [p.animal, p.fruit, p.code, p.emplacement].filter(Boolean).join(" · "),
         code: p.code, stockQty: p.quantite ?? 0, raw: p,
       }));
-  }, [products, filtProduit, filtAnimal, filtFruit]);
+    const wineItems = wines
+      .filter((w: any) => {
+        if (filtChateau !== "__all__" && w.chateau !== filtChateau) return false;
+        if (filtCouleur !== "__all__" && w.couleur !== filtCouleur) return false;
+        if (filtTypeVin !== "__all__" && w.type_vin !== filtTypeVin) return false;
+        if (filtMillesime !== "__all__" && String(w.millesime ?? "") !== filtMillesime) return false;
+        if (filtMedaille !== "__all__" && !(w.medailles ?? []).includes(filtMedaille)) return false;
+        return true;
+      })
+      .map((w: any) => ({
+        id: w.id, kind: "wine" as const, label: w.chateau || "Vin",
+        sub: [w.couleur, w.type_vin, w.millesime, w.emplacement].filter(Boolean).join(" · "),
+        code: w.code_barre || "", stockQty: w.quantite ?? 0, raw: w,
+      }));
+    return [...prodItems, ...wineItems];
+  }, [products, wines, filtProduit, filtAnimal, filtFruit, filtChateau, filtCouleur, filtTypeVin, filtMillesime, filtMedaille]);
+
 
   const countedIds = useMemo(() => new Set(counted.map((c) => c.id)), [counted]);
   const remaining = useMemo(() => scopeItems.filter((i) => !countedIds.has(i.id)), [scopeItems, countedIds]);
@@ -97,6 +132,11 @@ function InventairePage() {
       if (!prod) { const r = await supabase.from("products").select("*").eq("ancien_code", c).is("deleted_at", null).maybeSingle(); prod = r.data; }
       if (prod) {
         addCounted({ id: prod.id, kind: "product", label: prod.produit, sub: [prod.animal, prod.fruit, prod.code, "hors périmètre"].filter(Boolean).join(" · "), code: prod.code, stockQty: prod.quantite ?? 0, raw: prod });
+        return;
+      }
+      const { data: wine } = await supabase.from("wines").select("*").eq("code_barre", c).is("deleted_at", null).maybeSingle();
+      if (wine) {
+        addCounted({ id: wine.id, kind: "wine", label: wine.chateau || "Vin", sub: [wine.couleur, wine.type_vin, wine.millesime, "hors périmètre"].filter(Boolean).join(" · "), code: wine.code_barre || "", stockQty: wine.quantite ?? 0, raw: wine });
         return;
       }
     }
@@ -153,46 +193,105 @@ function InventairePage() {
       </div>
 
       {!started ? (
-        <div className="rounded-xl border bg-card p-4 space-y-3">
+        <div className="rounded-xl border bg-card p-4 space-y-4">
           <p className="font-semibold">Démarrer une session</p>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div>
-              <Label>Produit</Label>
-              <Select value={filtProduit} onValueChange={setFiltProduit}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">Tous</SelectItem>
-                  {produits.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                </SelectContent>
-              </Select>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-muted-foreground">Produits</p>
+              <div>
+                <Label>Produit</Label>
+                <Select value={filtProduit} onValueChange={setFiltProduit}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">Tous</SelectItem>
+                    {produits.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Animal</Label>
+                <Select value={filtAnimal} onValueChange={setFiltAnimal}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">Tous</SelectItem>
+                    {animaux.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Fruit / Légume</Label>
+                <Select value={filtFruit} onValueChange={setFiltFruit}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">Tous</SelectItem>
+                    {fruits.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div>
-              <Label>Animal</Label>
-              <Select value={filtAnimal} onValueChange={setFiltAnimal}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">Tous</SelectItem>
-                  {animaux.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Fruit / Légume</Label>
-              <Select value={filtFruit} onValueChange={setFiltFruit}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">Tous</SelectItem>
-                  {fruits.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                </SelectContent>
-              </Select>
+
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-muted-foreground">Vins</p>
+              <div>
+                <Label>Nom de domaine</Label>
+                <Select value={filtChateau} onValueChange={setFiltChateau}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">Tous</SelectItem>
+                    {chateaux.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Couleur</Label>
+                <Select value={filtCouleur} onValueChange={setFiltCouleur}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">Toutes</SelectItem>
+                    {couleurs.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Médaille</Label>
+                <Select value={filtMedaille} onValueChange={setFiltMedaille}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">Toutes</SelectItem>
+                    {medailles.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Type de vin</Label>
+                <Select value={filtTypeVin} onValueChange={setFiltTypeVin}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">Tous</SelectItem>
+                    {typesVin.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Millésime</Label>
+                <Select value={filtMillesime} onValueChange={setFiltMillesime}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">Tous</SelectItem>
+                    {millesimes.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
+
           <div className="flex items-center gap-2">
             <Checkbox checked={autoSortir} onCheckedChange={(v) => setAutoSortir(!!v)} />
             <Label className="text-sm">Envoyer automatiquement les produits manquants en sortie de stock</Label>
           </div>
           <Button onClick={start}><Play className="mr-2 h-4 w-4" /> Démarrer</Button>
         </div>
+
       ) : (
         <>
           <div className="rounded-xl border bg-card p-3 space-y-3 sticky top-0 z-10">
@@ -201,6 +300,11 @@ function InventairePage() {
                 {filtProduit !== "__all__" && <Badge variant="outline">{filtProduit}</Badge>}
                 {filtAnimal !== "__all__" && <Badge variant="outline">{filtAnimal}</Badge>}
                 {filtFruit !== "__all__" && <Badge variant="outline">{filtFruit}</Badge>}
+                {filtChateau !== "__all__" && <Badge variant="outline">{filtChateau}</Badge>}
+                {filtCouleur !== "__all__" && <Badge variant="outline">{filtCouleur}</Badge>}
+                {filtMedaille !== "__all__" && <Badge variant="outline">Médaille {filtMedaille}</Badge>}
+                {filtTypeVin !== "__all__" && <Badge variant="outline">{filtTypeVin}</Badge>}
+                {filtMillesime !== "__all__" && <Badge variant="outline">{filtMillesime}</Badge>}
                 <span className="text-sm text-muted-foreground">{counted.length} / {scopeItems.length} compté(s)</span>
               </div>
               <div className="flex gap-2">
