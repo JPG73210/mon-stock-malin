@@ -209,44 +209,56 @@ export async function generateLabelPdf(
       const rLines = [produit, secondary, poidsTxt, bagueTxt];
 
       const availH = h - pad * 2;
-      const lineH = availH / 4;
+      const topLineH = availH / 4; // hauteur réservée à l'ID/QR en haut
       const idToQrGap = 1.8; // espace ID → QR (mm)
-      const qrSize = availH - lineH - idToQrGap - 0.5;
+      const qrSize = availH - topLineH - idToQrGap - 0.5;
+
+      // Lignes non vides uniquement → elles partagent l'espace disponible.
+      const filled = rLines.filter((l) => l && l.trim() !== "");
+      const nLines = Math.max(1, filled.length);
+
+      // Largeur dispo pour le bloc texte (à droite du QR).
+      const leftW = qrSize; // ID en haut-gauche n'élargit pas la colonne de droite
+      const txLeft = pad + leftW + 1.2;
+      const txRight = w - pad;
+      const txAreaW = txRight - txLeft;
+      const txCenter = (txLeft + txRight) / 2;
+      const blockH = availH; // les lignes occupent toute la hauteur de l'étiquette
+
+      const lineH = blockH / nLines;
 
       const fits = (sz: number) => {
-        if (sz * 0.42 > lineH - 1) return false;
+        // hauteur de ligne suffisante
+        if (sz * 0.42 > lineH - 0.5) return false;
         doc.setFont("helvetica", "bold"); doc.setFontSize(sz);
-        const idW = id ? doc.getTextWidth(id) : 0;
-        const leftW = Math.max(qrSize, idW);
-        const txL = pad + leftW + 1.2;
-        const twL = w - txL - pad;
-        for (const ln of rLines) {
-          if (ln && doc.getTextWidth(ln) > twL) return false;
+        for (const ln of filled) {
+          if (doc.getTextWidth(ln) > txAreaW) return false;
         }
         return true;
       };
-      let sz = 16;
+      let sz = 24;
       while (sz > 5 && !fits(sz)) sz -= 0.25;
 
-      doc.setFont("helvetica", "bold"); doc.setFontSize(sz);
-      const idW = id ? doc.getTextWidth(id) : 0;
-      const leftW = Math.max(qrSize, idW);
+      // ID en haut à gauche (taille indépendante, calée sur la ligne du haut)
+      const idSize = Math.min(sz, 12);
+      doc.setFont("helvetica", "bold"); doc.setFontSize(idSize);
+      if (id) doc.text(id, pad, pad + idSize * 0.42 + 0.2);
 
-      if (id) doc.text(id, pad, pad + sz * 0.42 + 0.2);
-
-      const qrX = pad + (leftW - qrSize) / 2;
-      const qrY = pad + lineH + idToQrGap;
+      // QR sous l'ID, aligné à gauche
+      const qrX = pad;
+      const qrY = pad + topLineH + idToQrGap;
       doc.addImage(qr, "PNG", qrX, qrY, qrSize, qrSize);
 
-      const txR = pad + leftW + 1.2;
-      for (let li = 0; li < 4; li++) {
-        const ln = rLines[li];
-        if (!ln) continue;
-        const yL = pad + lineH * li + lineH - (lineH - sz * 0.42) / 2;
-        doc.text(ln, txR, yL);
+      // Lignes à droite — centrées horizontalement et verticalement réparties
+      doc.setFont("helvetica", "bold"); doc.setFontSize(sz);
+      for (let li = 0; li < nLines; li++) {
+        const ln = filled[li];
+        const yL = pad + lineH * li + lineH / 2 + sz * 0.42 / 2 - 0.2;
+        doc.text(ln, txCenter, yL, { align: "center" });
       }
       continue;
     }
+
 
     // Zone texte — occupe TOUT l'espace restant à droite du QR.
     const tx = portrait ? pad : qx + qrSize + pad * 1.5;
