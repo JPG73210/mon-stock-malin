@@ -90,17 +90,17 @@ export async function generateLabelPdf(
       ? Math.min(w - pad * 2, h * 0.6)
       : qrLandscape;
     // 23×23 : QR et ID maximisés, animal collé en bas.
-    const qrSize = square ? 16 : qrMax;
+    const qrSize = square ? 15.5 : qrMax;
     const qx = square ? (w - qrSize) / 2 : (portrait ? (w - qrSize) / 2 : pad);
-    const qy = square ? 2.5 : (portrait ? pad : (h - qrSize) / 2);
+    const qy = square ? 4 : (portrait ? pad : (h - qrSize) / 2);
     doc.addImage(qr, "PNG", qx, qy, qrSize, qrSize);
 
     if (square) {
       // 23×23 : ID au-dessus du QR — gras, taille max.
       if (data.id) {
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(13);
-        doc.text(String(data.id), w / 2, 1, { align: "center", maxWidth: w });
+        doc.setFontSize(12);
+        doc.text(String(data.id), w / 2, 3.3, { align: "center", baseline: "alphabetic", maxWidth: w });
       }
       // Animal : horizontal, centré sous le QR, gras.
       if (data.animal) {
