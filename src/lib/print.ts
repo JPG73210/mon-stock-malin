@@ -100,7 +100,7 @@ export async function generateLabelPdf(
       if (data.id) {
         doc.setFont("helvetica", "bold");
         doc.setFontSize(13);
-        doc.text(String(data.id), w / 2, 3.3, { align: "center", maxWidth: w });
+        doc.text(String(data.id), w / 2, 1, { align: "center", maxWidth: w });
       }
       // Animal : horizontal, centré sous le QR, gras.
       if (data.animal) {
