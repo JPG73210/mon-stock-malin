@@ -89,18 +89,18 @@ export async function generateLabelPdf(
     const qrMax = portrait
       ? Math.min(w - pad * 2, h * 0.6)
       : qrLandscape;
-    // 23×23 : QR remonté et légèrement agrandi (11 mm) tout en laissant la place au texte.
-    const qrSize = square ? 11 : qrMax;
+    // 23×23 : QR remonté et agrandi (12 mm) tout en laissant la place au texte.
+    const qrSize = square ? 12 : qrMax;
     const qx = square ? 3 : (portrait ? (w - qrSize) / 2 : pad);
-    const qy = square ? 7 : (portrait ? pad : (h - qrSize) / 2);
+    const qy = square ? 6.5 : (portrait ? pad : (h - qrSize) / 2);
     doc.addImage(qr, "PNG", qx, qy, qrSize, qrSize);
 
     if (square) {
-      // 23×23 : ID au-dessus du QR — gras 8pt pour tenir dans la largeur (17 mm utiles).
+      // 23×23 : ID au-dessus du QR — gras 10pt.
       if (data.id) {
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(8);
-        doc.text(String(data.id), 3, 4.8, { maxWidth: w - 6 });
+        doc.setFontSize(10);
+        doc.text(String(data.id), 3, 5.2, { maxWidth: w - 6 });
       }
       // Animal : horizontal, centré sous le QR, gras 10pt.
       if (data.animal) {
