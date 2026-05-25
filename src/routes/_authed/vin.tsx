@@ -199,9 +199,6 @@ function VinPage() {
                     {scanning ? <X className="h-4 w-4" /> : <Camera className="h-4 w-4" />}
                   </Button>
                 </div>
-                    {scanning ? <X className="h-4 w-4" /> : <Camera className="h-4 w-4" />}
-                  </Button>
-                </div>
               </Field>
               {scanning && (
                 <CameraScanner
