@@ -12,7 +12,20 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Camera, Save, Upload, X, Heart, Printer, Trophy } from "lucide-react";
+import { Camera, Save, Upload, X, Heart, Printer, Trophy, Info } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
+/** Nettoie l'entrée d'une douchette qui préfixe parfois un horodatage.
+ *  Garde uniquement le dernier segment non-blanc (le code réel). */
+function cleanBarcode(raw: string): string {
+  if (!raw) return "";
+  // si la douchette envoie "2026-05-25 14:32:11<TAB>3760123456789"
+  const parts = raw.split(/[\s\t]+/).filter(Boolean);
+  let code = parts[parts.length - 1] ?? "";
+  // sécurité : retirer un éventuel préfixe ISO date/heure collé
+  code = code.replace(/^\d{4}-\d{2}-\d{2}T?\d{0,2}:?\d{0,2}:?\d{0,2}\.?\d*Z?/, "");
+  return code.trim().toUpperCase();
+}
 import { CameraScanner } from "@/components/CameraScanner";
 import { ManagedSelect } from "@/components/ManagedSelect";
 import { RecentEntries } from "@/components/RecentEntries";
