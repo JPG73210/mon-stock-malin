@@ -105,6 +105,19 @@ function VinPage() {
         notes: f.notes || null,
       });
       if (error) throw error;
+
+      // Si aucun code-barres : on génère un identifiant interne
+      // (type + château + millésime) et on imprime autant d'étiquettes
+      // que la quantité saisie pour servir d'identification à l'inventaire.
+      if (!f.code_barre.trim()) {
+        const parts = [f.type_vin, f.chateau, f.millesime].filter(Boolean);
+        const id = parts.join(" ").trim() || `VIN-${Date.now()}`;
+        const qty = Math.max(1, Number(f.quantite) || 1);
+        await enqueuePrintJob("23x23v", {
+          id, produit: f.chateau, animal: f.type_vin, date: f.millesime,
+        }, qty);
+        toast.success(`${qty} étiquette(s) QR envoyée(s) à l'imprimante`);
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["wines"] });
@@ -112,24 +125,23 @@ function VinPage() {
       qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
       qc.invalidateQueries({ queryKey: ["a-racheter"] });
       toast.success(`Vin ajouté × ${f.quantite}`);
-      // Pas de reset (reset à la fermeture de l'app)
     },
     onError: (e: any) => toast.error(e.message ?? "Erreur"),
   });
 
-  async function printQrLabel() {
-    const id = f.code_barre || f.chateau || `VIN-${Date.now()}`;
-    const qty = Math.max(1, Number(f.quantite) || 1);
+  async function printOneLabel() {
+    const parts = [f.type_vin, f.chateau, f.millesime].filter(Boolean);
+    const id = f.code_barre || parts.join(" ").trim() || `VIN-${Date.now()}`;
     try {
       await enqueuePrintJob("23x23v", {
-        id, produit: f.chateau, animal: f.type_vin,
-        date: f.millesime,
-      }, qty);
-      toast.success(`${qty} étiquette(s) 23×23 vin envoyée(s) à l'imprimante`);
+        id, produit: f.chateau, animal: f.type_vin, date: f.millesime,
+      }, 1);
+      toast.success("1 étiquette envoyée à l'imprimante");
     } catch (e: any) {
       toast.error(e.message ?? "Erreur impression");
     }
   }
+
 
 
   const qrValue = JSON.stringify({
