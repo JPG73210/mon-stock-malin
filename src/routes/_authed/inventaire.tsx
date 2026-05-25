@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { QrCode as QrIcon, Barcode, X, Play, Square, Download, AlertCircle, Check, Minus, Plus, ArrowLeftRight, CheckCircle2 } from "lucide-react";
+import { QrCode as QrIcon, Barcode, X, Play, Square, Download, AlertCircle, Check, Minus, Plus, ArrowLeftRight, CheckCircle2, ScanLine } from "lucide-react";
 import { CameraScanner } from "@/components/CameraScanner";
 
 export const Route = createFileRoute("/_authed/inventaire")({ component: InventairePage });
@@ -32,6 +33,8 @@ function InventairePage() {
   const [filtMillesime, setFiltMillesime] = useState<string>("__all__");
   const [autoSortir, setAutoSortir] = useState(false);
   const [started, setStarted] = useState(false);
+  const [continuousMode, setContinuousMode] = useState(false);
+  const [lastScan, setLastScan] = useState<{ label: string; sub: string; ok: boolean; ts: number } | null>(null);
   const [input, setInput] = useState("");
   const [scanning, setScanning] = useState<"qr" | "barcode" | null>(null);
   const [counted, setCounted] = useState<Counted[]>([]);
@@ -101,16 +104,30 @@ function InventairePage() {
 
   useEffect(() => { if (started) inputRef.current?.focus(); }, [started]);
 
-  function start() { setCounted([]); setUnknown([]); setStarted(true); }
+  function start(mode: "normal" | "continuous" = "normal") {
+    setCounted([]); setUnknown([]);
+    setContinuousMode(mode === "continuous");
+    setStarted(true);
+    setLastScan(null);
+  }
   function stop() {
     if (counted.length === 0 && unknown.length === 0) { setStarted(false); return; }
     if (!confirm("Terminer la session d'inventaire ?")) return;
     setStarted(false);
   }
   function addCounted(item: Item) {
-    if (countedIds.has(item.id)) { toast.error(`Déjà compté : ${item.label}`); return; }
+    if (countedIds.has(item.id)) {
+      if (continuousMode) {
+        // En mode continu : incrémenter au lieu de bloquer
+        setCounted((p) => p.map((c) => c.id === item.id ? { ...c, countedQty: c.countedQty + 1, scannedAt: Date.now() } : c));
+        setLastScan({ label: item.label, sub: item.sub, ok: true, ts: Date.now() });
+        return;
+      }
+      toast.error(`Déjà compté : ${item.label}`); return;
+    }
     setCounted((p) => [{ ...item, countedQty: 1, scannedAt: Date.now() }, ...p]);
-    toast.success(`✓ ${item.label}`);
+    setLastScan({ label: item.label, sub: item.sub, ok: true, ts: Date.now() });
+    if (!continuousMode) toast.success(`✓ ${item.label}`);
   }
   function adjustCounted(id: string, delta: number) {
     setCounted((p) => p.map((c) => c.id === id ? { ...c, countedQty: Math.max(0, c.countedQty + delta) } : c));
@@ -140,9 +157,14 @@ function InventairePage() {
         return;
       }
     }
-    if (unknown.some((u) => u.code === raw)) { toast.error(`Code inconnu déjà scanné : ${raw}`); return; }
+    if (unknown.some((u) => u.code === raw)) {
+      if (!continuousMode) toast.error(`Code inconnu déjà scanné : ${raw}`);
+      setLastScan({ label: "Code inconnu", sub: raw, ok: false, ts: Date.now() });
+      return;
+    }
     setUnknown((p) => [{ code: raw, scannedAt: Date.now() }, ...p]);
-    toast.error(`Code inconnu : ${raw}`);
+    setLastScan({ label: "Code inconnu", sub: raw, ok: false, ts: Date.now() });
+    if (!continuousMode) toast.error(`Code inconnu : ${raw}`);
   }
 
   function submit(e: React.FormEvent) { e.preventDefault(); lookup(input); setInput(""); }
@@ -289,11 +311,38 @@ function InventairePage() {
             <Checkbox checked={autoSortir} onCheckedChange={(v) => setAutoSortir(!!v)} />
             <Label className="text-sm">Envoyer automatiquement les produits manquants en sortie de stock</Label>
           </div>
-          <Button onClick={start}><Play className="mr-2 h-4 w-4" /> Démarrer</Button>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button onClick={() => start("normal")} className="flex-1"><Play className="mr-2 h-4 w-4" /> Démarrer (avec filtres)</Button>
+            <Button onClick={() => start("continuous")} variant="secondary" className="flex-1">
+              <ScanLine className="mr-2 h-4 w-4" /> Mode scan continu
+            </Button>
+          </div>
         </div>
 
       ) : (
         <>
+          {continuousMode && (
+            <div className={cn(
+              "rounded-xl border-2 p-6 text-center transition-colors",
+              lastScan?.ok ? "border-green-500 bg-green-50 dark:bg-green-950/30" :
+              lastScan && !lastScan.ok ? "border-destructive bg-destructive/10" :
+              "border-dashed bg-muted/30"
+            )}>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Mode scan continu</p>
+              {lastScan ? (
+                <>
+                  <p className="text-2xl md:text-3xl font-bold truncate">{lastScan.label}</p>
+                  <p className="text-sm text-muted-foreground truncate">{lastScan.sub}</p>
+                </>
+              ) : (
+                <p className="text-lg text-muted-foreground">En attente du premier scan…</p>
+              )}
+              <p className="mt-3 text-5xl font-mono font-bold">
+                {counted.reduce((s, c) => s + c.countedQty, 0)}
+              </p>
+              <p className="text-xs text-muted-foreground">scans validés · {unknown.length} inconnu(s)</p>
+            </div>
+          )}
           <div className="rounded-xl border bg-card p-3 space-y-3 sticky top-0 z-10">
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <div className="flex items-center gap-2 flex-wrap">

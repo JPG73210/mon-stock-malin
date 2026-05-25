@@ -22,6 +22,7 @@ import { Route as AuthedImpressionRouteImport } from './routes/_authed/impressio
 import { Route as AuthedImportRouteImport } from './routes/_authed/import'
 import { Route as AuthedEtiquettesRouteImport } from './routes/_authed/etiquettes'
 import { Route as AuthedEntreeRouteImport } from './routes/_authed/entree'
+import { Route as AuthedDonneesRouteImport } from './routes/_authed/donnees'
 import { Route as AuthedCorbeilleRouteImport } from './routes/_authed/corbeille'
 
 const AuthRoute = AuthRouteImport.update({
@@ -88,6 +89,11 @@ const AuthedEntreeRoute = AuthedEntreeRouteImport.update({
   path: '/entree',
   getParentRoute: () => AuthedRoute,
 } as any)
+const AuthedDonneesRoute = AuthedDonneesRouteImport.update({
+  id: '/donnees',
+  path: '/donnees',
+  getParentRoute: () => AuthedRoute,
+} as any)
 const AuthedCorbeilleRoute = AuthedCorbeilleRouteImport.update({
   id: '/corbeille',
   path: '/corbeille',
@@ -98,6 +104,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthedIndexRoute
   '/auth': typeof AuthRoute
   '/corbeille': typeof AuthedCorbeilleRoute
+  '/donnees': typeof AuthedDonneesRoute
   '/entree': typeof AuthedEntreeRoute
   '/etiquettes': typeof AuthedEtiquettesRoute
   '/import': typeof AuthedImportRoute
@@ -112,6 +119,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/corbeille': typeof AuthedCorbeilleRoute
+  '/donnees': typeof AuthedDonneesRoute
   '/entree': typeof AuthedEntreeRoute
   '/etiquettes': typeof AuthedEtiquettesRoute
   '/import': typeof AuthedImportRoute
@@ -129,6 +137,7 @@ export interface FileRoutesById {
   '/_authed': typeof AuthedRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authed/corbeille': typeof AuthedCorbeilleRoute
+  '/_authed/donnees': typeof AuthedDonneesRoute
   '/_authed/entree': typeof AuthedEntreeRoute
   '/_authed/etiquettes': typeof AuthedEtiquettesRoute
   '/_authed/import': typeof AuthedImportRoute
@@ -147,6 +156,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/corbeille'
+    | '/donnees'
     | '/entree'
     | '/etiquettes'
     | '/import'
@@ -161,6 +171,7 @@ export interface FileRouteTypes {
   to:
     | '/auth'
     | '/corbeille'
+    | '/donnees'
     | '/entree'
     | '/etiquettes'
     | '/import'
@@ -177,6 +188,7 @@ export interface FileRouteTypes {
     | '/_authed'
     | '/auth'
     | '/_authed/corbeille'
+    | '/_authed/donnees'
     | '/_authed/entree'
     | '/_authed/etiquettes'
     | '/_authed/import'
@@ -288,6 +300,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedEntreeRouteImport
       parentRoute: typeof AuthedRoute
     }
+    '/_authed/donnees': {
+      id: '/_authed/donnees'
+      path: '/donnees'
+      fullPath: '/donnees'
+      preLoaderRoute: typeof AuthedDonneesRouteImport
+      parentRoute: typeof AuthedRoute
+    }
     '/_authed/corbeille': {
       id: '/_authed/corbeille'
       path: '/corbeille'
@@ -300,6 +319,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthedRouteChildren {
   AuthedCorbeilleRoute: typeof AuthedCorbeilleRoute
+  AuthedDonneesRoute: typeof AuthedDonneesRoute
   AuthedEntreeRoute: typeof AuthedEntreeRoute
   AuthedEtiquettesRoute: typeof AuthedEtiquettesRoute
   AuthedImportRoute: typeof AuthedImportRoute
@@ -315,6 +335,7 @@ interface AuthedRouteChildren {
 
 const AuthedRouteChildren: AuthedRouteChildren = {
   AuthedCorbeilleRoute: AuthedCorbeilleRoute,
+  AuthedDonneesRoute: AuthedDonneesRoute,
   AuthedEntreeRoute: AuthedEntreeRoute,
   AuthedEtiquettesRoute: AuthedEtiquettesRoute,
   AuthedImportRoute: AuthedImportRoute,
