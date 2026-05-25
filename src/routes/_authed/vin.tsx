@@ -236,12 +236,12 @@ function VinPage() {
             </Field>
           </div>
 
-          {/* Étiquette + impression QR */}
+          {/* Impression QR — icône à gauche, imprime 1 étiquette */}
           <div className="flex items-center gap-3 p-3 rounded-md border bg-muted/30">
-            <Label className="flex-1">Étiquette</Label>
-            <Button type="button" size="icon" variant="outline" onClick={printQrLabel} title="Imprimer étiquette QR 23×23">
+            <Button type="button" size="icon" variant="outline" onClick={printOneLabel} title="Imprimer 1 étiquette QR">
               <Printer className="h-4 w-4" />
             </Button>
+            <Label className="flex-1">Imprimer 1 étiquette QR</Label>
           </div>
 
           {/* À racheter */}
