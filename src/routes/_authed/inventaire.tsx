@@ -310,7 +310,12 @@ function InventairePage() {
             <Checkbox checked={autoSortir} onCheckedChange={(v) => setAutoSortir(!!v)} />
             <Label className="text-sm">Envoyer automatiquement les produits manquants en sortie de stock</Label>
           </div>
-          <Button onClick={start}><Play className="mr-2 h-4 w-4" /> Démarrer</Button>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button onClick={() => start("normal")} className="flex-1"><Play className="mr-2 h-4 w-4" /> Démarrer (avec filtres)</Button>
+            <Button onClick={() => start("continuous")} variant="secondary" className="flex-1">
+              <ScanLine className="mr-2 h-4 w-4" /> Mode scan continu
+            </Button>
+          </div>
         </div>
 
       ) : (
