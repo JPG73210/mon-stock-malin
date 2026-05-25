@@ -1,7 +1,7 @@
 import { Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import {
   Beef, Wine, Search, Trash2, LayoutDashboard, PackagePlus, LogOut, Menu, X, Upload,
-  Printer, Tags, Save, ClipboardList, ArrowLeftRight, Wrench, ChevronDown,
+  Printer, Tags, Save, ClipboardList, ArrowLeftRight, Wrench, ChevronDown, Database,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
