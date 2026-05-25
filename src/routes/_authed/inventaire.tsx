@@ -103,16 +103,30 @@ function InventairePage() {
 
   useEffect(() => { if (started) inputRef.current?.focus(); }, [started]);
 
-  function start() { setCounted([]); setUnknown([]); setStarted(true); }
+  function start(mode: "normal" | "continuous" = "normal") {
+    setCounted([]); setUnknown([]);
+    setContinuousMode(mode === "continuous");
+    setStarted(true);
+    setLastScan(null);
+  }
   function stop() {
     if (counted.length === 0 && unknown.length === 0) { setStarted(false); return; }
     if (!confirm("Terminer la session d'inventaire ?")) return;
     setStarted(false);
   }
   function addCounted(item: Item) {
-    if (countedIds.has(item.id)) { toast.error(`Déjà compté : ${item.label}`); return; }
+    if (countedIds.has(item.id)) {
+      if (continuousMode) {
+        // En mode continu : incrémenter au lieu de bloquer
+        setCounted((p) => p.map((c) => c.id === item.id ? { ...c, countedQty: c.countedQty + 1, scannedAt: Date.now() } : c));
+        setLastScan({ label: item.label, sub: item.sub, ok: true, ts: Date.now() });
+        return;
+      }
+      toast.error(`Déjà compté : ${item.label}`); return;
+    }
     setCounted((p) => [{ ...item, countedQty: 1, scannedAt: Date.now() }, ...p]);
-    toast.success(`✓ ${item.label}`);
+    setLastScan({ label: item.label, sub: item.sub, ok: true, ts: Date.now() });
+    if (!continuousMode) toast.success(`✓ ${item.label}`);
   }
   function adjustCounted(id: string, delta: number) {
     setCounted((p) => p.map((c) => c.id === id ? { ...c, countedQty: Math.max(0, c.countedQty + delta) } : c));
