@@ -1,7 +1,7 @@
 import { Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import {
   Beef, Wine, Search, Trash2, LayoutDashboard, PackagePlus, LogOut, Menu, X, Upload,
-  Printer, Tags, Save, ClipboardList, ArrowLeftRight,
+  Printer, Tags, Save, ClipboardList, ArrowLeftRight, Wrench, ChevronDown,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -13,13 +13,16 @@ const NAV = [
   { to: "/stock", label: "Stock", icon: Beef },
   { to: "/entree", label: "Entrée Viande/Légumes", icon: PackagePlus },
   { to: "/vin", label: "Entrée Vin", icon: Wine },
-  { to: "/recherche", label: "Recherche", icon: Search },
   { to: "/inventaire", label: "Inventaire", icon: ClipboardList },
+  { to: "/sorties", label: "Sorties de stock", icon: ArrowLeftRight },
+] as const;
+
+const OUTILS = [
+  { to: "/recherche", label: "Recherche", icon: Search },
   { to: "/etiquettes", label: "Modèles d'étiquettes", icon: Tags },
   { to: "/impression", label: "Impression", icon: Printer },
   { to: "/import", label: "Import CSV", icon: Upload },
   { to: "/sauvegarde", label: "Sauvegarde", icon: Save },
-  { to: "/sorties", label: "Sorties de stock", icon: ArrowLeftRight },
   { to: "/corbeille", label: "Corbeille", icon: Trash2 },
 ] as const;
 
