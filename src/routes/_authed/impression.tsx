@@ -131,6 +131,10 @@ function ImpressionPage() {
             <div>
               <p className="font-semibold mb-2">Fichiers de programmation</p>
               <div className="grid sm:grid-cols-2 gap-2">
+                <a href="/ARCHITECTURE-IMPRESSION.md" target="_blank" rel="noreferrer" className="border rounded-md p-3 hover:bg-muted text-xs bg-primary/5">
+                  <p className="font-medium">📐 Architecture complète</p>
+                  <p className="text-muted-foreground">Documentation détaillée du flow</p>
+                </a>
                 <a href="/print-agent.zip" download className="border rounded-md p-3 hover:bg-muted text-xs">
                   <p className="font-medium">Agent Node.js (.zip)</p>
                   <p className="text-muted-foreground">PC + Sumatra PDF</p>
