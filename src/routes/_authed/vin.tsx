@@ -194,8 +194,11 @@ function VinPage() {
               {/* 2) Code-barres */}
               <Field label="Code-barres EAN">
                 <div className="flex gap-2">
-                  <Input value={f.code_barre} onChange={(e) => setF({ ...f, code_barre: e.target.value.toUpperCase() })} placeholder="Scanner ou saisir" />
+                  <Input value={f.code_barre} onChange={(e) => setF({ ...f, code_barre: cleanBarcode(e.target.value) })} placeholder="Scanner ou saisir" />
                   <Button type="button" variant="outline" size="icon" onClick={() => setScanning(!scanning)}>
+                    {scanning ? <X className="h-4 w-4" /> : <Camera className="h-4 w-4" />}
+                  </Button>
+                </div>
                     {scanning ? <X className="h-4 w-4" /> : <Camera className="h-4 w-4" />}
                   </Button>
                 </div>
