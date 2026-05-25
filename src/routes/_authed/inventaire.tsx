@@ -32,6 +32,8 @@ function InventairePage() {
   const [filtMillesime, setFiltMillesime] = useState<string>("__all__");
   const [autoSortir, setAutoSortir] = useState(false);
   const [started, setStarted] = useState(false);
+  const [continuousMode, setContinuousMode] = useState(false);
+  const [lastScan, setLastScan] = useState<{ label: string; sub: string; ok: boolean; ts: number } | null>(null);
   const [input, setInput] = useState("");
   const [scanning, setScanning] = useState<"qr" | "barcode" | null>(null);
   const [counted, setCounted] = useState<Counted[]>([]);
