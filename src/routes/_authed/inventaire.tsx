@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { QrCode as QrIcon, Barcode, X, Play, Square, Download, AlertCircle, Check, Minus, Plus, ArrowLeftRight, CheckCircle2 } from "lucide-react";
+import { QrCode as QrIcon, Barcode, X, Play, Square, Download, AlertCircle, Check, Minus, Plus, ArrowLeftRight, CheckCircle2, ScanLine } from "lucide-react";
 import { CameraScanner } from "@/components/CameraScanner";
 
 export const Route = createFileRoute("/_authed/inventaire")({ component: InventairePage });
