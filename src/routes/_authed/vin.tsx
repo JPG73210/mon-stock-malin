@@ -151,7 +151,24 @@ function VinPage() {
 
   return (
     <div className="p-6 md:p-8 max-w-5xl">
-      <h1 className="text-3xl font-bold mb-2">Étiquette — Vin</h1>
+      <div className="flex items-start gap-2 mb-2">
+        <h1 className="text-3xl font-bold">Étiquette — Vin</h1>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button type="button" className="mt-2 text-muted-foreground hover:text-foreground" aria-label="Aide">
+                <Info className="h-4 w-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-xs text-left">
+              Si aucun code-barres n'est saisi à l'enregistrement, un QR code est
+              généré à partir du type de vin + château/domaine + millésime, et
+              autant d'étiquettes que la quantité sont imprimées. Ce QR servira
+              d'identification lors de l'inventaire.
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
       <p className="text-muted-foreground mb-6">Code-barres EAN supporté (douchette ou caméra).</p>
 
       <div className="grid md:grid-cols-3 gap-6">
