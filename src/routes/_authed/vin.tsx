@@ -12,7 +12,20 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Camera, Save, Upload, X, Heart, Printer, Trophy } from "lucide-react";
+import { Camera, Save, Upload, X, Heart, Printer, Trophy, Info } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
+/** Nettoie l'entrée d'une douchette qui préfixe parfois un horodatage.
+ *  Garde uniquement le dernier segment non-blanc (le code réel). */
+function cleanBarcode(raw: string): string {
+  if (!raw) return "";
+  // si la douchette envoie "2026-05-25 14:32:11<TAB>3760123456789"
+  const parts = raw.split(/[\s\t]+/).filter(Boolean);
+  let code = parts[parts.length - 1] ?? "";
+  // sécurité : retirer un éventuel préfixe ISO date/heure collé
+  code = code.replace(/^\d{4}-\d{2}-\d{2}T?\d{0,2}:?\d{0,2}:?\d{0,2}\.?\d*Z?/, "");
+  return code.trim().toUpperCase();
+}
 import { CameraScanner } from "@/components/CameraScanner";
 import { ManagedSelect } from "@/components/ManagedSelect";
 import { RecentEntries } from "@/components/RecentEntries";
@@ -92,6 +105,19 @@ function VinPage() {
         notes: f.notes || null,
       });
       if (error) throw error;
+
+      // Si aucun code-barres : on génère un identifiant interne
+      // (type + château + millésime) et on imprime autant d'étiquettes
+      // que la quantité saisie pour servir d'identification à l'inventaire.
+      if (!f.code_barre.trim()) {
+        const parts = [f.type_vin, f.chateau, f.millesime].filter(Boolean);
+        const id = parts.join(" ").trim() || `VIN-${Date.now()}`;
+        const qty = Math.max(1, Number(f.quantite) || 1);
+        await enqueuePrintJob("23x23v", {
+          id, produit: f.chateau, animal: f.type_vin, date: f.millesime,
+        }, qty);
+        toast.success(`${qty} étiquette(s) QR envoyée(s) à l'imprimante`);
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["wines"] });
@@ -99,24 +125,23 @@ function VinPage() {
       qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
       qc.invalidateQueries({ queryKey: ["a-racheter"] });
       toast.success(`Vin ajouté × ${f.quantite}`);
-      // Pas de reset (reset à la fermeture de l'app)
     },
     onError: (e: any) => toast.error(e.message ?? "Erreur"),
   });
 
-  async function printQrLabel() {
-    const id = f.code_barre || f.chateau || `VIN-${Date.now()}`;
-    const qty = Math.max(1, Number(f.quantite) || 1);
+  async function printOneLabel() {
+    const parts = [f.type_vin, f.chateau, f.millesime].filter(Boolean);
+    const id = f.code_barre || parts.join(" ").trim() || `VIN-${Date.now()}`;
     try {
       await enqueuePrintJob("23x23v", {
-        id, produit: f.chateau, animal: f.type_vin,
-        date: f.millesime,
-      }, qty);
-      toast.success(`${qty} étiquette(s) 23×23 vin envoyée(s) à l'imprimante`);
+        id, produit: f.chateau, animal: f.type_vin, date: f.millesime,
+      }, 1);
+      toast.success("1 étiquette envoyée à l'imprimante");
     } catch (e: any) {
       toast.error(e.message ?? "Erreur impression");
     }
   }
+
 
 
   const qrValue = JSON.stringify({
@@ -126,7 +151,24 @@ function VinPage() {
 
   return (
     <div className="p-6 md:p-8 max-w-5xl">
-      <h1 className="text-3xl font-bold mb-2">Étiquette — Vin</h1>
+      <div className="flex items-start gap-2 mb-2">
+        <h1 className="text-3xl font-bold">Étiquette — Vin</h1>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button type="button" className="mt-2 text-muted-foreground hover:text-foreground" aria-label="Aide">
+                <Info className="h-4 w-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-xs text-left">
+              Si aucun code-barres n'est saisi à l'enregistrement, un QR code est
+              généré à partir du type de vin + château/domaine + millésime, et
+              autant d'étiquettes que la quantité sont imprimées. Ce QR servira
+              d'identification lors de l'inventaire.
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
       <p className="text-muted-foreground mb-6">Code-barres EAN supporté (douchette ou caméra).</p>
 
       <div className="grid md:grid-cols-3 gap-6">
@@ -152,7 +194,7 @@ function VinPage() {
               {/* 2) Code-barres */}
               <Field label="Code-barres EAN">
                 <div className="flex gap-2">
-                  <Input value={f.code_barre} onChange={(e) => setF({ ...f, code_barre: e.target.value.toUpperCase() })} placeholder="Scanner ou saisir" />
+                  <Input value={f.code_barre} onChange={(e) => setF({ ...f, code_barre: cleanBarcode(e.target.value) })} placeholder="Scanner ou saisir" />
                   <Button type="button" variant="outline" size="icon" onClick={() => setScanning(!scanning)}>
                     {scanning ? <X className="h-4 w-4" /> : <Camera className="h-4 w-4" />}
                   </Button>
@@ -194,12 +236,12 @@ function VinPage() {
             </Field>
           </div>
 
-          {/* Étiquette + impression QR */}
+          {/* Impression QR — icône à gauche, imprime 1 étiquette */}
           <div className="flex items-center gap-3 p-3 rounded-md border bg-muted/30">
-            <Label className="flex-1">Étiquette</Label>
-            <Button type="button" size="icon" variant="outline" onClick={printQrLabel} title="Imprimer étiquette QR 23×23">
+            <Button type="button" size="icon" variant="outline" onClick={printOneLabel} title="Imprimer 1 étiquette QR">
               <Printer className="h-4 w-4" />
             </Button>
+            <Label className="flex-1">Imprimer 1 étiquette QR</Label>
           </div>
 
           {/* À racheter */}
