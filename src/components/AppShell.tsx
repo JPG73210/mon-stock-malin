@@ -31,6 +31,8 @@ export function AppShell() {
   const nav = useNavigate();
   const loc = useLocation();
   const [open, setOpen] = useState(false);
+  const outilsActive = OUTILS.some((o) => loc.pathname === o.to);
+  const [outilsOpen, setOutilsOpen] = useState(outilsActive);
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-background">
