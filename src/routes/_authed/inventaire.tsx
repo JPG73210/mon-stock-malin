@@ -156,9 +156,14 @@ function InventairePage() {
         return;
       }
     }
-    if (unknown.some((u) => u.code === raw)) { toast.error(`Code inconnu déjà scanné : ${raw}`); return; }
+    if (unknown.some((u) => u.code === raw)) {
+      if (!continuousMode) toast.error(`Code inconnu déjà scanné : ${raw}`);
+      setLastScan({ label: "Code inconnu", sub: raw, ok: false, ts: Date.now() });
+      return;
+    }
     setUnknown((p) => [{ code: raw, scannedAt: Date.now() }, ...p]);
-    toast.error(`Code inconnu : ${raw}`);
+    setLastScan({ label: "Code inconnu", sub: raw, ok: false, ts: Date.now() });
+    if (!continuousMode) toast.error(`Code inconnu : ${raw}`);
   }
 
   function submit(e: React.FormEvent) { e.preventDefault(); lookup(input); setInput(""); }
