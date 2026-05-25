@@ -70,6 +70,43 @@ export function AppShell() {
               </Link>
             );
           })}
+
+          <button
+            type="button"
+            onClick={() => setOutilsOpen((v) => !v)}
+            className={cn(
+              "w-full flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+              outilsActive
+                ? "text-sidebar-foreground font-medium"
+                : "text-sidebar-foreground hover:bg-sidebar-accent"
+            )}
+          >
+            <Wrench className="h-4 w-4" />
+            <span className="flex-1 text-left">Outils</span>
+            <ChevronDown className={cn("h-4 w-4 transition-transform", outilsOpen && "rotate-180")} />
+          </button>
+          {outilsOpen && (
+            <div className="ml-4 mt-1 space-y-1 border-l border-sidebar-border pl-2">
+              {OUTILS.map(({ to, label, icon: Icon }) => {
+                const active = loc.pathname === to;
+                return (
+                  <Link
+                    key={to}
+                    to={to}
+                    onClick={() => setOpen(false)}
+                    className={cn(
+                      "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+                      active
+                        ? "bg-primary text-primary-foreground font-medium"
+                        : "text-sidebar-foreground hover:bg-sidebar-accent"
+                    )}
+                  >
+                    <Icon className="h-4 w-4" /> {label}
+                  </Link>
+                );
+              })}
+            </div>
+          )}
         </nav>
         <div className="p-3 border-t border-sidebar-border space-y-2">
           <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
