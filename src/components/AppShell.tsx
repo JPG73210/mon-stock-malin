@@ -20,7 +20,8 @@ const NAV = [
 const OUTILS = [
   { to: "/recherche", label: "Recherche", icon: Search },
   { to: "/etiquettes", label: "Modèles d'étiquettes", icon: Tags },
-  { to: "/impression", label: "Impression", icon: Printer },
+  { to: "/impression", label: "Historique des impressions", icon: Printer },
+  { to: "/donnees", label: "Données", icon: Database },
   { to: "/import", label: "Import CSV", icon: Upload },
   { to: "/sauvegarde", label: "Sauvegarde", icon: Save },
   { to: "/corbeille", label: "Corbeille", icon: Trash2 },
