@@ -320,6 +320,28 @@ function InventairePage() {
 
       ) : (
         <>
+          {continuousMode && (
+            <div className={cn(
+              "rounded-xl border-2 p-6 text-center transition-colors",
+              lastScan?.ok ? "border-green-500 bg-green-50 dark:bg-green-950/30" :
+              lastScan && !lastScan.ok ? "border-destructive bg-destructive/10" :
+              "border-dashed bg-muted/30"
+            )}>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Mode scan continu</p>
+              {lastScan ? (
+                <>
+                  <p className="text-2xl md:text-3xl font-bold truncate">{lastScan.label}</p>
+                  <p className="text-sm text-muted-foreground truncate">{lastScan.sub}</p>
+                </>
+              ) : (
+                <p className="text-lg text-muted-foreground">En attente du premier scan…</p>
+              )}
+              <p className="mt-3 text-5xl font-mono font-bold">
+                {counted.reduce((s, c) => s + c.countedQty, 0)}
+              </p>
+              <p className="text-xs text-muted-foreground">scans validés · {unknown.length} inconnu(s)</p>
+            </div>
+          )}
           <div className="rounded-xl border bg-card p-3 space-y-3 sticky top-0 z-10">
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <div className="flex items-center gap-2 flex-wrap">
