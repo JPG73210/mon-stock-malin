@@ -218,8 +218,8 @@ function InventairePage() {
         <div className="rounded-xl border bg-card p-4 space-y-4">
           <p className="font-semibold">Démarrer une session</p>
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-3">
-              <p className="text-sm font-medium text-muted-foreground">Produits</p>
+            <div className="space-y-3 rounded-lg border border-primary/30 bg-primary/5 p-4">
+              <p className="text-sm font-semibold uppercase tracking-wide text-primary">Produits</p>
               <div>
                 <Label>Produit</Label>
                 <Select value={filtProduit} onValueChange={setFiltProduit}>
@@ -252,8 +252,8 @@ function InventairePage() {
               </div>
             </div>
 
-            <div className="space-y-3">
-              <p className="text-sm font-medium text-muted-foreground">Vins</p>
+            <div className="space-y-3 rounded-lg border border-accent/30 bg-accent/5 p-4">
+              <p className="text-sm font-semibold uppercase tracking-wide text-accent">Vins</p>
               <div>
                 <Label>Nom de domaine</Label>
                 <Select value={filtChateau} onValueChange={setFiltChateau}>

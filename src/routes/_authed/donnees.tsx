@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useOptions, type OptionField } from "@/hooks/use-options";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Pencil, Plus, Trash2, Check, X, Database } from "lucide-react";
+import { Pencil, Plus, Trash2, Check, X, Database, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authed/donnees")({ component: DonneesPage });
@@ -13,12 +13,9 @@ const FIELDS: { field: OptionField; label: string; group: "produits" | "vins" | 
   { field: "produit", label: "Produit", group: "produits" },
   { field: "animal", label: "Animal", group: "produits" },
   { field: "fruit", label: "Fruit / Légume", group: "produits" },
-  { field: "version", label: "Version", group: "produits" },
   { field: "unite_poids", label: "Unité de poids", group: "produits" },
-  { field: "etiquette_format", label: "Format d'étiquette", group: "produits" },
   { field: "type_vin", label: "Type de vin", group: "vins" },
   { field: "chateau", label: "Château / Domaine", group: "vins" },
-  { field: "millesime", label: "Millésime", group: "vins" },
   { field: "couleur_vin", label: "Couleur du vin", group: "vins" },
   { field: "emplacement", label: "Emplacement", group: "communs" },
 ];
@@ -31,8 +28,8 @@ function DonneesPage() {
         <div>
           <h1 className="text-2xl md:text-3xl font-bold">Données</h1>
           <p className="text-sm text-muted-foreground">
-            Gérez les valeurs des listes déroulantes utilisées dans les formulaires.
-            Les valeurs par défaut ne sont pas modifiables ; seules vos valeurs personnalisées peuvent être éditées ou supprimées.
+            Gérez toutes les valeurs des listes déroulantes. Les valeurs par défaut peuvent être renommées
+            ou masquées ; vous pouvez aussi les restaurer.
           </p>
         </div>
       </div>
@@ -51,14 +48,28 @@ function DonneesPage() {
   );
 }
 
+type Entry =
+  | { kind: "default"; value: string }
+  | { kind: "custom"; value: string; id: string };
+
 function FieldEditor({ field, label }: { field: OptionField; label: string }) {
-  const { defaults, custom, add, update, remove } = useOptions(field);
+  const opts = useOptions(field);
   const [newVal, setNewVal] = useState("");
+
+  const entries: Entry[] = useMemo(() => {
+    const list: Entry[] = [
+      ...opts.visibleDefaults.map((v) => ({ kind: "default" as const, value: v })),
+      ...opts.custom.map((c) => ({ kind: "custom" as const, value: c.value, id: c.id })),
+    ];
+    return list.sort((a, b) =>
+      a.value.localeCompare(b.value, "fr", { sensitivity: "base", numeric: true })
+    );
+  }, [opts.visibleDefaults, opts.custom]);
 
   async function handleAdd() {
     if (!newVal.trim()) return;
     try {
-      await add.mutateAsync(newVal);
+      await opts.add.mutateAsync(newVal);
       setNewVal("");
       toast.success("Valeur ajoutée");
     } catch (e: any) { toast.error(e.message); }
@@ -68,7 +79,7 @@ function FieldEditor({ field, label }: { field: OptionField; label: string }) {
     <div className="rounded-xl border bg-card p-4 space-y-3">
       <div className="flex items-center justify-between">
         <h3 className="font-medium">{label}</h3>
-        <Badge variant="outline">{defaults.length + custom.length}</Badge>
+        <Badge variant="outline">{entries.length}</Badge>
       </div>
 
       <div className="flex gap-2">
@@ -78,42 +89,83 @@ function FieldEditor({ field, label }: { field: OptionField; label: string }) {
           onChange={(e) => setNewVal(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleAdd()}
         />
-        <Button onClick={handleAdd} disabled={!newVal.trim() || add.isPending} size="icon">
+        <Button onClick={handleAdd} disabled={!newVal.trim() || opts.add.isPending} size="icon">
           <Plus className="h-4 w-4" />
         </Button>
       </div>
 
-      <div className="space-y-1 max-h-64 overflow-auto">
-        {defaults.length > 0 && (
-          <div className="space-y-1">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">Par défaut</p>
-            {defaults.map((v) => (
-              <div key={`d-${v}`} className="flex items-center justify-between p-2 rounded bg-muted/40 text-sm">
-                <span>{v}</span>
-                <Badge variant="secondary" className="text-xs">verrouillé</Badge>
+      <div className="space-y-1 max-h-72 overflow-auto">
+        {entries.length === 0 && opts.hidden.length === 0 && (
+          <p className="text-sm text-muted-foreground italic">Aucune valeur.</p>
+        )}
+        {entries.map((e) =>
+          e.kind === "custom" ? (
+            <EditableRow
+              key={`c-${e.id}`}
+              value={e.value}
+              onSave={(v) => opts.update.mutate({ id: e.id, value: v })}
+              onDelete={() => {
+                if (confirm(`Supprimer "${e.value}" ?`)) opts.remove.mutate(e.id);
+              }}
+            />
+          ) : (
+            <DefaultRow
+              key={`d-${e.value}`}
+              value={e.value}
+              onRename={async (v) => {
+                await opts.add.mutateAsync(v);
+                await opts.hideDefault.mutateAsync(e.value);
+              }}
+              onDelete={() => {
+                if (confirm(`Masquer "${e.value}" ?`)) opts.hideDefault.mutate(e.value);
+              }}
+            />
+          )
+        )}
+        {opts.hidden.length > 0 && (
+          <div className="pt-2 border-t mt-2">
+            <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Masquées</p>
+            {opts.hidden.map((h) => (
+              <div key={h.id} className="flex items-center justify-between p-2 rounded text-sm text-muted-foreground">
+                <span className="line-through">{h.value}</span>
+                <Button size="icon" variant="ghost" className="h-7 w-7"
+                  onClick={() => opts.restoreDefault.mutate(h.value)} title="Restaurer">
+                  <RotateCcw className="h-3 w-3" />
+                </Button>
               </div>
             ))}
           </div>
         )}
-        {custom.length > 0 && (
-          <div className="space-y-1 pt-2">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">Personnalisées</p>
-            {custom.map((c) => (
-              <EditableRow
-                key={c.id}
-                value={c.value}
-                onSave={(v) => update.mutate({ id: c.id, value: v })}
-                onDelete={() => {
-                  if (confirm(`Supprimer "${c.value}" ? Les entrées existantes ne sont pas modifiées.`))
-                    remove.mutate(c.id);
-                }}
-              />
-            ))}
-          </div>
-        )}
-        {defaults.length === 0 && custom.length === 0 && (
-          <p className="text-sm text-muted-foreground italic">Aucune valeur. Ajoutez-en une ci-dessus.</p>
-        )}
+      </div>
+    </div>
+  );
+}
+
+function DefaultRow({ value, onRename, onDelete }: {
+  value: string; onRename: (v: string) => void | Promise<void>; onDelete: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [v, setV] = useState(value);
+  if (editing) {
+    return (
+      <div className="flex gap-1 items-center p-1">
+        <Input value={v} onChange={(e) => setV(e.target.value)} className="h-8" />
+        <Button size="icon" variant="ghost" className="h-8 w-8"
+          onClick={async () => { if (v.trim() && v !== value) await onRename(v.trim()); setEditing(false); }}>
+          <Check className="h-4 w-4" />
+        </Button>
+        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => { setV(value); setEditing(false); }}>
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-center justify-between p-2 rounded hover:bg-muted text-sm">
+      <span>{value}</span>
+      <div className="flex gap-1">
+        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditing(true)}><Pencil className="h-3 w-3" /></Button>
+        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onDelete}><Trash2 className="h-3 w-3 text-destructive" /></Button>
       </div>
     </div>
   );
