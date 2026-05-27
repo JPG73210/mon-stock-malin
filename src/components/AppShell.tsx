@@ -50,6 +50,24 @@ export function AppShell() {
     return () => window.removeEventListener("app-name-change", onChange);
   }, []);
 
+  const [installPrompt, setInstallPrompt] = useState<any>(null);
+  useEffect(() => {
+    const onBip = (e: Event) => { e.preventDefault(); setInstallPrompt(e); };
+    window.addEventListener("beforeinstallprompt", onBip);
+    return () => window.removeEventListener("beforeinstallprompt", onBip);
+  }, []);
+
+  async function installApp() {
+    if (installPrompt) {
+      installPrompt.prompt();
+      await installPrompt.userChoice;
+      setInstallPrompt(null);
+    } else {
+      toast.info("Sur Android : ouvrez le menu Chrome (⋮) puis « Ajouter à l'écran d'accueil ». Sur iPhone : utilisez « Sur l'écran d'accueil » depuis Safari.");
+    }
+  }
+
+
   function saveName() {
     const v = draftName.trim() || "🌾🧀🍷 LES PRODUITS DU TERROIRS";
     setAppName(v);
