@@ -52,7 +52,7 @@ function AuthPage() {
           <div className="flex justify-center gap-2 text-primary">
             <Beef className="h-7 w-7" /><Wine className="h-7 w-7" />
           </div>
-          <h1 className="text-2xl font-bold">Stock JP/JC</h1>
+          <h1 className="text-2xl font-bold">🌾🧀🍷 LES PRODUITS DU TERROIRS</h1>
           <p className="text-sm text-muted-foreground">
             {mode === "login" ? "Connectez-vous à votre compte" : "Créer un compte"}
           </p>
