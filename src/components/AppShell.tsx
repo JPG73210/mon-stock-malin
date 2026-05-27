@@ -178,6 +178,14 @@ export function AppShell() {
                 {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
                 <span className="flex-1 text-left">Thème {theme === "dark" ? "clair" : "sombre"}</span>
               </button>
+              <button
+                type="button"
+                onClick={installApp}
+                className="w-full flex items-center gap-3 rounded-md px-3 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+              >
+                <Smartphone className="h-4 w-4" />
+                <span className="flex-1 text-left">Installer sur Android</span>
+              </button>
             </div>
           )}
         </nav>
