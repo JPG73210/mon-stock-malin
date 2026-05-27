@@ -2,8 +2,9 @@ import { Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import {
   Beef, Wine, Search, Trash2, LayoutDashboard, PackagePlus, LogOut, Menu, X, Upload,
   Printer, Tags, Save, ClipboardList, ArrowLeftRight, Wrench, ChevronDown, Database,
-  Pencil, Check, Moon, Sun,
+  Pencil, Check, Moon, Sun, Smartphone,
 } from "lucide-react";
+import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
