@@ -26,9 +26,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 export const useTheme = () => useContext(Ctx);
 
 const APP_NAME_KEY = "app_name";
+const DEFAULT_APP_NAME = "🌾🧀🍷 LES PRODUITS DU TERROIRS";
 export function getAppName(): string {
-  if (typeof window === "undefined") return "Stock JP/JC";
-  return localStorage.getItem(APP_NAME_KEY) || "Stock JP/JC";
+  if (typeof window === "undefined") return DEFAULT_APP_NAME;
+  return localStorage.getItem(APP_NAME_KEY) || DEFAULT_APP_NAME;
 }
 export function setAppName(name: string) {
   localStorage.setItem(APP_NAME_KEY, name);

@@ -2,8 +2,9 @@ import { Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import {
   Beef, Wine, Search, Trash2, LayoutDashboard, PackagePlus, LogOut, Menu, X, Upload,
   Printer, Tags, Save, ClipboardList, ArrowLeftRight, Wrench, ChevronDown, Database,
-  Pencil, Check, Moon, Sun,
+  Pencil, Check, Moon, Sun, Smartphone,
 } from "lucide-react";
+import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,8 +50,26 @@ export function AppShell() {
     return () => window.removeEventListener("app-name-change", onChange);
   }, []);
 
+  const [installPrompt, setInstallPrompt] = useState<any>(null);
+  useEffect(() => {
+    const onBip = (e: Event) => { e.preventDefault(); setInstallPrompt(e); };
+    window.addEventListener("beforeinstallprompt", onBip);
+    return () => window.removeEventListener("beforeinstallprompt", onBip);
+  }, []);
+
+  async function installApp() {
+    if (installPrompt) {
+      installPrompt.prompt();
+      await installPrompt.userChoice;
+      setInstallPrompt(null);
+    } else {
+      toast.info("Sur Android : ouvrez le menu Chrome (⋮) puis « Ajouter à l'écran d'accueil ». Sur iPhone : utilisez « Sur l'écran d'accueil » depuis Safari.");
+    }
+  }
+
+
   function saveName() {
-    const v = draftName.trim() || "Stock JP/JC";
+    const v = draftName.trim() || "🌾🧀🍷 LES PRODUITS DU TERROIRS";
     setAppName(v);
     setAppNameState(v);
     setEditingName(false);
@@ -158,6 +177,14 @@ export function AppShell() {
               >
                 {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
                 <span className="flex-1 text-left">Thème {theme === "dark" ? "clair" : "sombre"}</span>
+              </button>
+              <button
+                type="button"
+                onClick={installApp}
+                className="w-full flex items-center gap-3 rounded-md px-3 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+              >
+                <Smartphone className="h-4 w-4" />
+                <span className="flex-1 text-left">Installer sur Android</span>
               </button>
             </div>
           )}
