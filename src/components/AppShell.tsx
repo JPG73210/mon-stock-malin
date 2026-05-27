@@ -50,7 +50,7 @@ export function AppShell() {
   }, []);
 
   function saveName() {
-    const v = draftName.trim() || "Stock JP/JC";
+    const v = draftName.trim() || "🌾🧀🍷 LES PRODUITS DU TERROIRS";
     setAppName(v);
     setAppNameState(v);
     setEditingName(false);
