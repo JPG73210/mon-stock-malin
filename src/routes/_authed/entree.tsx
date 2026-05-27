@@ -119,7 +119,7 @@ function EntreePage() {
 
   return (
     <div className="p-6 md:p-8 max-w-5xl">
-      <h1 className="text-3xl font-bold mb-2">Entrée — Viande / Légumes</h1>
+      <h1 className="text-3xl font-bold mb-2">Terroirs, Saveurs &amp; Traditions</h1>
       <p className="text-muted-foreground mb-6">Un identifiant unique est généré, sauf si vous saisissez un code existant.</p>
 
       <div className="grid md:grid-cols-3 gap-6">
