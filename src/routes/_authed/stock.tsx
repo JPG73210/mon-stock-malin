@@ -66,6 +66,7 @@ function ProductsList() {
   const [selected, setSelected] = useState<any | null>(null);
   const [previewing, setPreviewing] = useState<any | null>(null);
   const [editing, setEditing] = useState<any | null>(null);
+  const [sortieOpen, setSortieOpen] = useState(false);
   const { has, toggle, clear, ids: selIds } = useSelection();
 
   const { data: products } = useQuery({
