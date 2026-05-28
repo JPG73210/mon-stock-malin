@@ -14,12 +14,13 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Heart, Trash2, Search, Printer, Pencil, Eye, Download, Share2, Medal } from "lucide-react";
+import { Heart, Trash2, Search, Printer, Pencil, Eye, Download, Share2, Medal, ArrowLeftRight, ScanLine } from "lucide-react";
 import { QrCode } from "@/components/QrCode";
 import { printLabelAirprint, downloadLabelPdf, shareLabelPdf } from "@/lib/print";
 import { ProductEditDialog } from "@/components/ProductEditDialog";
 import { WineEditDialog } from "@/components/WineEditDialog";
 import { LabelPreviewDialog } from "@/components/LabelPreviewDialog";
+import { SortieDialog } from "@/components/SortieDialog";
 import { useSelection } from "@/hooks/use-selection";
 import { cn } from "@/lib/utils";
 import coffreReserve from "@/assets/coffre-reserve.png";
@@ -65,6 +66,7 @@ function ProductsList() {
   const [selected, setSelected] = useState<any | null>(null);
   const [previewing, setPreviewing] = useState<any | null>(null);
   const [editing, setEditing] = useState<any | null>(null);
+  const [sortieOpen, setSortieOpen] = useState(false);
   const { has, toggle, clear, ids: selIds } = useSelection();
 
   const { data: products } = useQuery({
@@ -159,12 +161,20 @@ function ProductsList() {
 
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <p className="text-sm text-muted-foreground">{filtered.length} produit(s)</p>
-        {selIds.length > 0 && (
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary">{selIds.length} sélectionné(s)</Badge>
-            <Button size="sm" variant="outline" onClick={clear}>Tout désélectionner</Button>
-          </div>
-        )}
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button size="sm" variant="outline" onClick={() => setSortieOpen(true)}>
+            <ScanLine className="mr-1 h-4 w-4" /> Scanner sortie
+          </Button>
+          {selIds.length > 0 && (
+            <>
+              <Badge variant="secondary">{selIds.length} sélectionné(s)</Badge>
+              <Button size="sm" variant="outline" onClick={clear}>Tout désélectionner</Button>
+              <Button size="sm" onClick={() => setSortieOpen(true)}>
+                <ArrowLeftRight className="mr-1 h-4 w-4" /> Sortir du stock
+              </Button>
+            </>
+          )}
+        </div>
       </div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -255,6 +265,12 @@ function ProductsList() {
           }}
         />
       )}
+      <SortieDialog
+        open={sortieOpen}
+        onClose={() => setSortieOpen(false)}
+        products={(products ?? []).filter((p: any) => selIds.includes(p.id))}
+        onDone={clear}
+      />
     </div>
   );
 }

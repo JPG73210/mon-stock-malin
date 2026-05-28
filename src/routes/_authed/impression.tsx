@@ -9,12 +9,25 @@ import {
 import { Printer, RotateCcw, Trash2, Download, FlaskConical, Eraser } from "lucide-react";
 import { toast } from "sonner";
 import { enqueuePrintJob } from "@/lib/print";
+import { canManagePrint } from "@/lib/permissions";
+import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/_authed/impression")({
   component: ImpressionPage,
 });
 
 function ImpressionPage() {
+  const { user } = useAuth();
+  if (!canManagePrint(user?.email)) {
+    return (
+      <div className="p-8 max-w-2xl">
+        <h1 className="text-2xl font-bold mb-2">Accès restreint</h1>
+        <p className="text-sm text-muted-foreground">
+          La configuration et l'historique d'impression sont réservés à l'administrateur.
+        </p>
+      </div>
+    );
+  }
   const qc = useQueryClient();
   const { data: jobs = [] } = useQuery({
     queryKey: ["print-jobs"],
