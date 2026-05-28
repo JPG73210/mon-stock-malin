@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { useTheme, getAppName, setAppName } from "@/hooks/use-theme";
+import { canManagePrint } from "@/lib/permissions";
 
 const NAV = [
   { to: "/", label: "Tableau de bord", icon: LayoutDashboard },
