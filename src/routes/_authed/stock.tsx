@@ -161,12 +161,20 @@ function ProductsList() {
 
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <p className="text-sm text-muted-foreground">{filtered.length} produit(s)</p>
-        {selIds.length > 0 && (
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary">{selIds.length} sélectionné(s)</Badge>
-            <Button size="sm" variant="outline" onClick={clear}>Tout désélectionner</Button>
-          </div>
-        )}
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button size="sm" variant="outline" onClick={() => setSortieOpen(true)}>
+            <ScanLine className="mr-1 h-4 w-4" /> Scanner sortie
+          </Button>
+          {selIds.length > 0 && (
+            <>
+              <Badge variant="secondary">{selIds.length} sélectionné(s)</Badge>
+              <Button size="sm" variant="outline" onClick={clear}>Tout désélectionner</Button>
+              <Button size="sm" onClick={() => setSortieOpen(true)}>
+                <ArrowLeftRight className="mr-1 h-4 w-4" /> Sortir du stock
+              </Button>
+            </>
+          )}
+        </div>
       </div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
