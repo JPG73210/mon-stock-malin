@@ -265,6 +265,12 @@ function ProductsList() {
           }}
         />
       )}
+      <SortieDialog
+        open={sortieOpen}
+        onClose={() => setSortieOpen(false)}
+        products={(products ?? []).filter((p: any) => selIds.includes(p.id))}
+        onDone={clear}
+      />
     </div>
   );
 }
