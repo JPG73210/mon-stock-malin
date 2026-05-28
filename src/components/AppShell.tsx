@@ -22,14 +22,14 @@ const NAV = [
   { to: "/sorties", label: "Sorties de stock", icon: ArrowLeftRight },
 ] as const;
 
-const OUTILS = [
-  { to: "/recherche", label: "Recherche", icon: Search },
-  { to: "/etiquettes", label: "Modèles d'étiquettes", icon: Tags },
-  { to: "/impression", label: "Historique des impressions", icon: Printer },
-  { to: "/donnees", label: "Données", icon: Database },
-  { to: "/import", label: "Import CSV", icon: Upload },
-  { to: "/sauvegarde", label: "Sauvegarde", icon: Save },
-  { to: "/corbeille", label: "Corbeille", icon: Trash2 },
+const OUTILS_ALL = [
+  { to: "/recherche", label: "Recherche", icon: Search, adminOnly: false },
+  { to: "/etiquettes", label: "Modèles d'étiquettes", icon: Tags, adminOnly: false },
+  { to: "/impression", label: "Historique des impressions", icon: Printer, adminOnly: true },
+  { to: "/donnees", label: "Données", icon: Database, adminOnly: false },
+  { to: "/import", label: "Import CSV", icon: Upload, adminOnly: false },
+  { to: "/sauvegarde", label: "Sauvegarde", icon: Save, adminOnly: false },
+  { to: "/corbeille", label: "Corbeille", icon: Trash2, adminOnly: false },
 ] as const;
 
 export function AppShell() {
@@ -38,6 +38,8 @@ export function AppShell() {
   const nav = useNavigate();
   const loc = useLocation();
   const [open, setOpen] = useState(false);
+  const isPrintAdmin = canManagePrint(user?.email);
+  const OUTILS = OUTILS_ALL.filter((o) => !o.adminOnly || isPrintAdmin);
   const outilsActive = OUTILS.some((o) => loc.pathname === o.to);
   const [outilsOpen, setOutilsOpen] = useState(outilsActive);
 
