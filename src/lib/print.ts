@@ -46,6 +46,7 @@ export const ROLL_SPECS: Record<LabelFormat, {
 function normalizeFormat(fmt: string): LabelFormat {
   const f = (fmt ?? "").trim();
   if (f === "62" || f === "30x62" || f === "62x30") return "62";
+  if (f === "29x50" || f === "50x29") return "29x50";
   if (f === "62x29" || f === "29x62") return "62x29";
   if (f === "62x100" || f === "100x62") return "62x100";
   if (f === "17x54" || f === "54x17") return "17x54";
