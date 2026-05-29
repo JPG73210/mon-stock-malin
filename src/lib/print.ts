@@ -101,7 +101,8 @@ export async function generateLabelPdf(
     // QR : toujours carré, jamais distordu.
     // 62×25 (continu) → layout dédié ci-dessous (QR redessiné, on saute le calcul générique).
     // Autres landscape (17×54, 62×29…) → QR = pleine hauteur pour libérer texte.
-    const isReducedRoll = Math.abs(w - 62) < 0.5 && Math.abs(h - 25) < 0.5;
+    const isReducedRoll = (Math.abs(w - 62) < 0.5 && Math.abs(h - 25) < 0.5)
+      || (Math.abs(w - 29) < 0.5 && Math.abs(h - 50) < 0.5);
     const qrLandscape = Math.min(w * 0.5, h - pad * 2);
     const qrMax = portrait
       ? Math.min(w - pad * 2, h * 0.6)
