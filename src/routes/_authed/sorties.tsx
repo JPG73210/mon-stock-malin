@@ -151,6 +151,9 @@ function SortiesPage() {
             <Button size="sm" variant="default" disabled={checked.size === 0} onClick={() => setConfirming(true)}>
               <RotateCcw className="mr-1 h-4 w-4" /> Restaurer ({checked.size})
             </Button>
+            <Button size="sm" variant="destructive" disabled={checked.size === 0} onClick={() => setTrashing(true)}>
+              <Trash2 className="mr-1 h-4 w-4" /> Corbeille ({checked.size})
+            </Button>
             <Button size="sm" variant="outline" onClick={exportCsv} disabled={filtered.length === 0}>
               <Download className="mr-1 h-4 w-4" /> Exporter CSV
             </Button>
