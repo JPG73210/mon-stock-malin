@@ -89,6 +89,22 @@ function SortiesPage() {
     onError: (e: any) => toast.error(e.message ?? "Erreur"),
   });
 
+  const trash = useMutation({
+    mutationFn: async () => {
+      const ids = Array.from(checked);
+      if (ids.length === 0) throw new Error("Rien à supprimer");
+      const { error } = await supabase.from("stock_movements").delete().in("id", ids);
+      if (error) throw error;
+      return ids.length;
+    },
+    onSuccess: (n) => {
+      qc.invalidateQueries({ queryKey: ["stock-movements"] });
+      setChecked(new Set());
+      toast.success(`${n} mouvement(s) supprimé(s) définitivement`);
+    },
+    onError: (e: any) => toast.error(e.message ?? "Erreur"),
+  });
+
   function exportCsv() {
     const rows: string[][] = [["Date", "Type", "Code", "Libellé", "Quantité sortie", "Raison"]];
     for (const m of filtered) rows.push([new Date(m.created_at).toLocaleString("fr-FR"), m.kind === "product" ? "Produit" : "Vin", m.code ?? "", m.label ?? "", String(Math.abs(m.delta)), m.reason]);
