@@ -104,7 +104,8 @@ export function SortieDialog({
           label: [p.produit, p.animal, p.fruit].filter(Boolean).join(" / "),
           code: p.code,
           delta: -qty,
-          reason: reason.trim() || "Sortie manuelle",
+          reason: "out",
+          note: reason.trim() || "Sortie manuelle",
         });
         if (mvErr) throw mvErr;
       }
