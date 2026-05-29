@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
  *  - "62"     → DK-44205 (rouleau CONTINU amovible, largeur 62 mm).
  *               Longueur logicielle = 30 mm (modifiable dans ROLL_SPECS).
  */
-export type LabelFormat = "23x23" | "23x23v" | "17x54" | "62x29" | "62x100" | "62";
+export type LabelFormat = "23x23" | "23x23v" | "17x54" | "62x29" | "62x100" | "62" | "29x50";
 
 export type LabelData = {
   id: string;
