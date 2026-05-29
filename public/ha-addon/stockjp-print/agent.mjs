@@ -43,8 +43,8 @@ const CUPS_MEDIA = {
   "62x29":  "Custom.29x62mm",
   "62x100": "Custom.62x100mm",
   "62":     "Custom.62x25mm",
-  "29x50":  "Custom.29x50mm",
-  "50x29":  "Custom.29x50mm",
+  "29x50":  "Custom.50x29mm",
+  "50x29":  "Custom.50x29mm",
   // tolérance ancien libellé
   "30x62":  "Custom.62x25mm",
   "62x30":  "Custom.62x25mm",
