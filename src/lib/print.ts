@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
  *  - "62"     → DK-44205 (rouleau CONTINU amovible, largeur 62 mm).
  *               Longueur logicielle = 30 mm (modifiable dans ROLL_SPECS).
  */
-export type LabelFormat = "23x23" | "23x23v" | "17x54" | "62x29" | "62x100" | "62";
+export type LabelFormat = "23x23" | "23x23v" | "17x54" | "62x29" | "62x100" | "62" | "29x50";
 
 export type LabelData = {
   id: string;
@@ -40,11 +40,13 @@ export const ROLL_SPECS: Record<LabelFormat, {
   "62x29":  { dk: "DK-11209", label: "29×62 petite adr.",    mediaWidth: 62, mediaHeight: 29,  printable: { w: 62, h: 29  }, continuous: false, cupsMedia: "Custom.29x62mm"  },
   "62x100": { dk: "DK-11202", label: "62×100 expédition",    mediaWidth: 62, mediaHeight: 100, printable: { w: 62, h: 100 }, continuous: false, cupsMedia: "Custom.62x100mm" },
   "62":     { dk: "DK-44205", label: "Continu 62 mm (25 mm)", mediaWidth: 62, mediaHeight: 25, printable: { w: 62, h: 25 }, continuous: true, cupsMedia: "Custom.62x25mm" },
+  "29x50":  { dk: "DK-22211", label: "Grand Froid 29×50",     mediaWidth: 29, mediaHeight: 50, printable: { w: 29, h: 50 }, continuous: true, cupsMedia: "Custom.29x50mm" },
 };
 
 function normalizeFormat(fmt: string): LabelFormat {
   const f = (fmt ?? "").trim();
   if (f === "62" || f === "30x62" || f === "62x30") return "62";
+  if (f === "29x50" || f === "50x29") return "29x50";
   if (f === "62x29" || f === "29x62") return "62x29";
   if (f === "62x100" || f === "100x62") return "62x100";
   if (f === "17x54" || f === "54x17") return "17x54";
@@ -99,7 +101,8 @@ export async function generateLabelPdf(
     // QR : toujours carré, jamais distordu.
     // 62×25 (continu) → layout dédié ci-dessous (QR redessiné, on saute le calcul générique).
     // Autres landscape (17×54, 62×29…) → QR = pleine hauteur pour libérer texte.
-    const isReducedRoll = Math.abs(w - 62) < 0.5 && Math.abs(h - 25) < 0.5;
+    const isReducedRoll = (Math.abs(w - 62) < 0.5 && Math.abs(h - 25) < 0.5)
+      || (Math.abs(w - 29) < 0.5 && Math.abs(h - 50) < 0.5);
     const qrLandscape = Math.min(w * 0.5, h - pad * 2);
     const qrMax = portrait
       ? Math.min(w - pad * 2, h * 0.6)

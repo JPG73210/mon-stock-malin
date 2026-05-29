@@ -14,7 +14,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Download, RotateCcw } from "lucide-react";
+import { Download, RotateCcw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authed/sorties")({ component: SortiesPage });
@@ -30,6 +30,7 @@ function SortiesPage() {
   const [search, setSearch] = useState("");
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [confirming, setConfirming] = useState(false);
+  const [trashing, setTrashing] = useState(false);
 
   const { data = [], isLoading } = useQuery({
     queryKey: ["stock-movements", days],
@@ -88,6 +89,22 @@ function SortiesPage() {
     onError: (e: any) => toast.error(e.message ?? "Erreur"),
   });
 
+  const trash = useMutation({
+    mutationFn: async () => {
+      const ids = Array.from(checked);
+      if (ids.length === 0) throw new Error("Rien à supprimer");
+      const { error } = await supabase.from("stock_movements").delete().in("id", ids);
+      if (error) throw error;
+      return ids.length;
+    },
+    onSuccess: (n) => {
+      qc.invalidateQueries({ queryKey: ["stock-movements"] });
+      setChecked(new Set());
+      toast.success(`${n} mouvement(s) supprimé(s) définitivement`);
+    },
+    onError: (e: any) => toast.error(e.message ?? "Erreur"),
+  });
+
   function exportCsv() {
     const rows: string[][] = [["Date", "Type", "Code", "Libellé", "Quantité sortie", "Raison"]];
     for (const m of filtered) rows.push([new Date(m.created_at).toLocaleString("fr-FR"), m.kind === "product" ? "Produit" : "Vin", m.code ?? "", m.label ?? "", String(Math.abs(m.delta)), m.reason]);
@@ -134,6 +151,9 @@ function SortiesPage() {
             <Button size="sm" variant="default" disabled={checked.size === 0} onClick={() => setConfirming(true)}>
               <RotateCcw className="mr-1 h-4 w-4" /> Restaurer ({checked.size})
             </Button>
+            <Button size="sm" variant="destructive" disabled={checked.size === 0} onClick={() => setTrashing(true)}>
+              <Trash2 className="mr-1 h-4 w-4" /> Corbeille ({checked.size})
+            </Button>
             <Button size="sm" variant="outline" onClick={exportCsv} disabled={filtered.length === 0}>
               <Download className="mr-1 h-4 w-4" /> Exporter CSV
             </Button>
@@ -176,6 +196,21 @@ function SortiesPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Annuler</AlertDialogCancel>
             <AlertDialogAction onClick={() => { setConfirming(false); restore.mutate(); }}>Restaurer</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={trashing} onOpenChange={setTrashing}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer définitivement ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {checked.size} mouvement(s) seront supprimés de l'historique. Les produits ne seront PAS remis en stock.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { setTrashing(false); trash.mutate(); }}>Supprimer</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
