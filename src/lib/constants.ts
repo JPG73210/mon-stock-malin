@@ -22,7 +22,7 @@ export const ETIQUETTE_FORMATS = [
   "62x29",   // DK-11209 — petite adresse 29×62
   "62x100",  // DK-11202 — expédition 62×100
   "62",      // DK-44205 — continu 62 mm (longueur 30 mm)
-  "29x50",   // DK-22211 — Grand Froid 29×50
+  "29x50",   // DK-22211 — Grand Froid 50×29
 ] as const;
 
 
