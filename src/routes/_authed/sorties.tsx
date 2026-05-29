@@ -30,6 +30,7 @@ function SortiesPage() {
   const [search, setSearch] = useState("");
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [confirming, setConfirming] = useState(false);
+  const [trashing, setTrashing] = useState(false);
 
   const { data = [], isLoading } = useQuery({
     queryKey: ["stock-movements", days],
