@@ -40,7 +40,7 @@ export const ROLL_SPECS: Record<LabelFormat, {
   "62x29":  { dk: "DK-11209", label: "29×62 petite adr.",    mediaWidth: 62, mediaHeight: 29,  printable: { w: 62, h: 29  }, continuous: false, cupsMedia: "Custom.29x62mm"  },
   "62x100": { dk: "DK-11202", label: "62×100 expédition",    mediaWidth: 62, mediaHeight: 100, printable: { w: 62, h: 100 }, continuous: false, cupsMedia: "Custom.62x100mm" },
   "62":     { dk: "DK-44205", label: "Continu 62 mm (25 mm)", mediaWidth: 62, mediaHeight: 25, printable: { w: 62, h: 25 }, continuous: true, cupsMedia: "Custom.62x25mm" },
-  "29x50":  { dk: "DK-22211", label: "Grand Froid 29×50",     mediaWidth: 50, mediaHeight: 29, printable: { w: 50, h: 29 }, continuous: true, cupsMedia: "Custom.29x50mm" },
+  "29x50":  { dk: "DK-22211", label: "Grand Froid 29×50",     mediaWidth: 29, mediaHeight: 50, printable: { w: 29, h: 50 }, continuous: true, cupsMedia: "Custom.29x50mm" },
 };
 
 function normalizeFormat(fmt: string): LabelFormat {
@@ -71,8 +71,13 @@ export async function generateLabelPdf(
   data: LabelData,
   quantite = 1,
 ): Promise<string> {
-  const { w, h } = formatSize(fmt);
-  const doc = new jsPDF({ unit: "mm", format: [w, h], orientation: w > h ? "landscape" : "portrait" });
+  const { w: pageW, h: pageH } = formatSize(fmt);
+  // Pour "29x50" : la page PDF est 29×50 portrait (largeur ruban × longueur de coupe),
+  // mais on dessine le layout en 50×29 paysage puis on pivote de 90° (QR sur le côté court).
+  const isGrandFroid = normalizeFormat(fmt) === "29x50";
+  const w = isGrandFroid ? 50 : pageW;
+  const h = isGrandFroid ? 29 : pageH;
+  const doc = new jsPDF({ unit: "mm", format: [pageW, pageH], orientation: pageW > pageH ? "landscape" : "portrait" });
   const payload = JSON.stringify({
     id: data.id, produit: data.produit, animal: data.animal, fruit: data.fruit,
     bague: data.bague, date: data.date, poids: data.poids, unite: data.unite,
@@ -81,7 +86,15 @@ export async function generateLabelPdf(
   const qr = await QRCode.toDataURL(payload, { width: qrPx, margin: 0 });
 
   for (let i = 0; i < quantite; i++) {
-    if (i > 0) doc.addPage([w, h], w > h ? "landscape" : "portrait");
+    if (i > 0) doc.addPage([pageW, pageH], pageW > pageH ? "landscape" : "portrait");
+    if (isGrandFroid) {
+      // Rotation 90° horaire : logique (x,y) en 50×29 → physique (pageW - y, x) en 29×50.
+      doc.advancedAPI((pdf) => {
+        pdf.saveGraphicsState();
+        // @ts-ignore — Matrix constructeur exposé par jsPDF advancedAPI
+        pdf.setCurrentTransformationMatrix(new (pdf as any).Matrix(0, 1, -1, 0, pageW, 0));
+      });
+    }
     const pad = 1;
     const portrait = h > w * 1.4; // tall labels → QR en haut, texte en bas
     const square   = Math.abs(w - h) < 2; // labels carrés (23×23) → QR + animal + ID compact
@@ -259,6 +272,7 @@ export async function generateLabelPdf(
         const yL = pad + lineH * li + lineH / 2 + sz * 0.42 / 2 - 0.2;
         doc.text(ln, txCenter, yL, { align: "center" });
       }
+      if (isGrandFroid) doc.advancedAPI((pdf) => pdf.restoreGraphicsState());
       continue;
     }
 
