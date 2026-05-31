@@ -272,6 +272,7 @@ export async function generateLabelPdf(
         const yL = pad + lineH * li + lineH / 2 + sz * 0.42 / 2 - 0.2;
         doc.text(ln, txCenter, yL, { align: "center" });
       }
+      if (isGrandFroid) doc.advancedAPI((pdf) => pdf.restoreGraphicsState());
       continue;
     }
 
