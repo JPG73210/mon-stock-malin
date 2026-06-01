@@ -88,12 +88,13 @@ export async function generateLabelPdf(
   for (let i = 0; i < quantite; i++) {
     if (i > 0) doc.addPage([pageW, pageH], pageW > pageH ? "landscape" : "portrait");
     if (isGrandFroid) {
-      // Rotation 90° anti-horaire : logique (x,y) en 50×29 → physique (y, pageH - x) en 29×50.
-      // QR (logique gauche) finit en bas du ruban, texte se lit dans le sens du défilement.
+      // Rotation 90° horaire : logique (x,y) en 50×29 → physique (pageW - y, x) en 29×50.
+      // Le bord GAUCHE logique (où sont l'ID + QR) devient le bord HAUT du ruban,
+      // et tout le texte se lit à l'endroit dans le sens du défilement.
       doc.advancedAPI((pdf) => {
         pdf.saveGraphicsState();
         // @ts-ignore — Matrix constructeur exposé par jsPDF advancedAPI
-        pdf.setCurrentTransformationMatrix(new (pdf as any).Matrix(0, -1, 1, 0, 0, pageH));
+        pdf.setCurrentTransformationMatrix(new (pdf as any).Matrix(0, 1, -1, 0, pageW, 0));
       });
     }
     const pad = 1;
