@@ -72,11 +72,10 @@ export async function generateLabelPdf(
   quantite = 1,
 ): Promise<string> {
   const { w: pageW, h: pageH } = formatSize(fmt);
-  // Pour "29x50" : la page PDF est 29×50 portrait (largeur ruban × longueur de coupe),
-  // mais on dessine le layout en 50×29 paysage puis on pivote de 90° (QR sur le côté court).
   const isGrandFroid = normalizeFormat(fmt) === "29x50";
-  const w = isGrandFroid ? 50 : pageW;
-  const h = isGrandFroid ? 29 : pageH;
+  // Pour "29x50" : layout natif portrait 29×50 (QR carré en haut, ID + texte en dessous à l'horizontale).
+  const w = pageW;
+  const h = pageH;
   const doc = new jsPDF({ unit: "mm", format: [pageW, pageH], orientation: pageW > pageH ? "landscape" : "portrait" });
   const payload = JSON.stringify({
     id: data.id, produit: data.produit, animal: data.animal, fruit: data.fruit,
@@ -87,16 +86,62 @@ export async function generateLabelPdf(
 
   for (let i = 0; i < quantite; i++) {
     if (i > 0) doc.addPage([pageW, pageH], pageW > pageH ? "landscape" : "portrait");
+
     if (isGrandFroid) {
-      // Rotation 90° horaire : logique (x,y) en 50×29 → physique (pageW - y, x) en 29×50.
-      // Le bord GAUCHE logique (où sont l'ID + QR) devient le bord HAUT du ruban,
-      // et tout le texte se lit à l'endroit dans le sens du défilement.
-      doc.advancedAPI((pdf) => {
-        pdf.saveGraphicsState();
-        // @ts-ignore — Matrix constructeur exposé par jsPDF advancedAPI
-        pdf.setCurrentTransformationMatrix(new (pdf as any).Matrix(0, 1, -1, 0, pageW, 0));
-      });
+      // Layout dédié 29×50 portrait : QR carré centré en haut, ID gros centré juste sous le QR,
+      // puis lignes secondaires (produit / animal / poids / bague / date) compactées en bas.
+      doc.setFillColor(255, 255, 255);
+      doc.rect(0, 0, w, h, "F");
+      const pad = 1.2;
+      const qrSide = Math.min(w - pad * 2, 25);
+      const qrX = (w - qrSide) / 2;
+      const qrY = pad;
+      doc.addImage(qr, "PNG", qrX, qrY, qrSide, qrSide);
+
+      let y = qrY + qrSide + 1.5;
+      const id = data.id ? String(data.id) : "";
+      if (id) {
+        // Taille auto : on tente 14pt puis on rétrécit si ça déborde la largeur.
+        let s = 14;
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(s);
+        while (s > 6 && doc.getTextWidth(id) > w - pad * 2) {
+          s -= 0.5;
+          doc.setFontSize(s);
+        }
+        y += s * 0.42;
+        doc.text(id, w / 2, y, { align: "center" });
+        y += 1.2;
+      }
+
+      const produit = data.produit ? String(data.produit) : "";
+      const secondary = [data.animal, data.fruit].filter((v) => v != null && String(v).trim() !== "").map(String).join(" / ");
+      const poidsTxt = data.poids != null && String(data.poids).trim() !== "" ? `${data.poids} ${data.unite ?? ""}`.trim() : "";
+      const bagueTxt = data.bague && String(data.bague).trim() !== "" ? String(data.bague) : "";
+      const dateTxt = data.date ? String(data.date) : "";
+      const lines = [produit, secondary, poidsTxt, bagueTxt, dateTxt].filter((l) => l && l.trim() !== "");
+
+      if (lines.length) {
+        const availH = h - y - pad;
+        const lh = Math.min(3.6, availH / lines.length);
+        let s = Math.min(8, lh / 0.5);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(s);
+        for (const ln of lines) {
+          while (s > 5 && doc.getTextWidth(ln) > w - pad * 2) {
+            s -= 0.25;
+            doc.setFontSize(s);
+          }
+        }
+        let cy = y + s * 0.42 + 0.4;
+        for (const ln of lines) {
+          doc.text(ln, w / 2, cy, { align: "center", maxWidth: w - pad * 2 });
+          cy += lh;
+        }
+      }
+      continue;
     }
+
     const pad = 1;
     const portrait = h > w * 1.4; // tall labels → QR en haut, texte en bas
     const square   = Math.abs(w - h) < 2; // labels carrés (23×23) → QR + animal + ID compact
