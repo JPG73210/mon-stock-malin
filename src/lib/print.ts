@@ -319,7 +319,7 @@ export async function generateLabelPdf(
         const yL = pad + lineH * li + lineH / 2 + sz * 0.42 / 2 - 0.2;
         doc.text(ln, txCenter, yL, { align: "center" });
       }
-      if (isGrandFroid) doc.advancedAPI((pdf) => pdf.restoreGraphicsState());
+      // (plus de rotation à restaurer — le 29×50 est géré en amont avec `continue`)
       continue;
     }
 
