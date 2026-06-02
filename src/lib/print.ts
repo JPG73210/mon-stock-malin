@@ -143,8 +143,9 @@ export async function generateLabelPdf(
         for (const l of lines) {
           doc.setFont("helvetica", l.bold ? "bold" : "normal");
           doc.setFontSize(s * l.weight);
-          // angle 90 = rotation CCW dans jsPDF → texte se lit de bas en haut
-          doc.text(l.text, xCursor, yMid, { angle: 90, align: "center", baseline: "middle" });
+          // angle -90 = rotation CW → texte se lit de haut en bas
+          // (ID = 1re colonne sous le QR, lue de haut en bas)
+          doc.text(l.text, xCursor, yMid, { angle: -90, align: "center", baseline: "middle" });
           xCursor += lineH * l.weight;
         }
       }
