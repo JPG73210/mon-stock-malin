@@ -88,55 +88,64 @@ export async function generateLabelPdf(
     if (i > 0) doc.addPage([pageW, pageH], pageW > pageH ? "landscape" : "portrait");
 
     if (isGrandFroid) {
-      // Layout dédié 29×50 portrait : QR carré centré en haut, ID gros centré juste sous le QR,
-      // puis lignes secondaires (produit / animal / poids / bague / date) compactées en bas.
+      // Layout 29×50 portrait : QR petit centré en haut, tout le texte ci-dessous
+      // tourné de 90° (se lit dans le sens de la longueur du ruban), aussi gros que possible.
       doc.setFillColor(255, 255, 255);
       doc.rect(0, 0, w, h, "F");
       const pad = 1.2;
-      const qrSide = Math.min(w - pad * 2, 25);
+      const qrSide = Math.min(w - pad * 2, 14);
       const qrX = (w - qrSide) / 2;
       const qrY = pad;
       doc.addImage(qr, "PNG", qrX, qrY, qrSide, qrSide);
 
-      let y = qrY + qrSide + 1.5;
       const id = data.id ? String(data.id) : "";
-      if (id) {
-        // Taille auto : on tente 14pt puis on rétrécit si ça déborde la largeur.
-        let s = 14;
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(s);
-        while (s > 6 && doc.getTextWidth(id) > w - pad * 2) {
-          s -= 0.5;
-          doc.setFontSize(s);
-        }
-        y += s * 0.42;
-        doc.text(id, w / 2, y, { align: "center" });
-        y += 1.2;
-      }
-
       const produit = data.produit ? String(data.produit) : "";
       const secondary = [data.animal, data.fruit].filter((v) => v != null && String(v).trim() !== "").map(String).join(" / ");
       const poidsTxt = data.poids != null && String(data.poids).trim() !== "" ? `${data.poids} ${data.unite ?? ""}`.trim() : "";
       const bagueTxt = data.bague && String(data.bague).trim() !== "" ? String(data.bague) : "";
       const dateTxt = data.date ? String(data.date) : "";
-      const lines = [produit, secondary, poidsTxt, bagueTxt, dateTxt].filter((l) => l && l.trim() !== "");
+      const lines: { text: string; bold: boolean; weight: number }[] = [];
+      if (id) lines.push({ text: id, bold: true, weight: 1.5 });
+      for (const t of [produit, secondary, poidsTxt, bagueTxt, dateTxt]) {
+        if (t && t.trim() !== "") lines.push({ text: t, bold: false, weight: 1 });
+      }
 
       if (lines.length) {
-        const availH = h - y - pad;
-        const lh = Math.min(3.6, availH / lines.length);
-        let s = Math.min(8, lh / 0.5);
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(s);
-        for (const ln of lines) {
-          while (s > 5 && doc.getTextWidth(ln) > w - pad * 2) {
-            s -= 0.25;
-            doc.setFontSize(s);
+        // Zone texte sous le QR : longueur (le long du ruban) = h - qrBottom - pad,
+        // largeur (perpendiculaire) = w - pad*2. Texte tourné de 90° CCW : la longueur
+        // de chaîne occupe la "longueur" verticale, les lignes empilent horizontalement.
+        const textTop = qrY + qrSide + 1.2;
+        const textLen = h - textTop - pad;        // longueur dispo pour chaque ligne
+        const textWidth = w - pad * 2;             // largeur dispo pour empiler les lignes
+        const totalWeight = lines.reduce((a, l) => a + l.weight, 0);
+
+        const fits = (s: number) => {
+          const lineH = s * 0.42 * 1.15;
+          // Empilement total
+          const stack = lines.reduce((a, l) => a + lineH * l.weight, 0);
+          if (stack > textWidth) return false;
+          for (const l of lines) {
+            doc.setFont("helvetica", l.bold ? "bold" : "normal");
+            doc.setFontSize(s * l.weight);
+            if (doc.getTextWidth(l.text) > textLen) return false;
           }
-        }
-        let cy = y + s * 0.42 + 0.4;
-        for (const ln of lines) {
-          doc.text(ln, w / 2, cy, { align: "center", maxWidth: w - pad * 2 });
-          cy += lh;
+          return true;
+        };
+        let s = 24;
+        while (s > 5 && !fits(s)) s -= 0.25;
+
+        const lineH = s * 0.42 * 1.15;
+        const stack = lines.reduce((a, l) => a + lineH * l.weight, 0);
+        // Centre vertical = centre de la zone (le long de w)
+        let xCursor = (w - stack) / 2 + lineH * (lines[0]?.weight ?? 1) / 2;
+        // Centre horizontal du texte = milieu de la longueur
+        const yMid = textTop + textLen / 2;
+        for (const l of lines) {
+          doc.setFont("helvetica", l.bold ? "bold" : "normal");
+          doc.setFontSize(s * l.weight);
+          // angle 90 = rotation CCW dans jsPDF → texte se lit de bas en haut
+          doc.text(l.text, xCursor, yMid, { angle: 90, align: "center", baseline: "middle" });
+          xCursor += lineH * l.weight;
         }
       }
       continue;
