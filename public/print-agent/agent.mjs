@@ -36,7 +36,7 @@ console.log(`✓ Connecté · imprimante cible: ${cfg.PRINTER}`);
 const POLL_MS = cfg.POLL_MS ?? 4000;
 const isWin = os.platform() === "win32";
 
-// Mapping format → option media CUPS (doit correspondre à src/lib/print.ts ROLL_SPECS)
+// Mapping format → option media CUPS (Linux/macOS)
 const CUPS_MEDIA = {
   "23x23":  "Custom.23x23mm",
   "17x54":  "Custom.54x17mm",
@@ -45,9 +45,25 @@ const CUPS_MEDIA = {
   "62":     "Custom.62x25mm",
   "29x50":  "Custom.29x50mm",
   "50x29":  "Custom.29x50mm",
-  // tolérance ancien libellé
   "30x62":  "Custom.62x25mm",
   "62x30":  "Custom.62x25mm",
+};
+
+// Mapping format → nom de papier dans le pilote Brother Windows
+// (utilisé par SumatraPDF via -print-settings "paper=...").
+// Ces noms correspondent aux médias DK standards du pilote QL-810W.
+// Si le pilote ne reconnaît pas le nom, configurer manuellement le format
+// papier par défaut de l'imprimante Windows quand on change de ruban.
+const WIN_PAPER = {
+  "23x23":  "23mm x 23mm",
+  "17x54":  "17mm x 54mm",
+  "62x29":  "29mm x 62mm",
+  "62x100": "62mm x 100mm",
+  "62":     "62mm",         // continu 62 mm
+  "29x50":  "29mm",         // continu 29 mm (DK-22211)
+  "50x29":  "29mm",
+  "30x62":  "62mm",
+  "62x30":  "62mm",
 };
 
 // Chemins possibles de SumatraPDF sous Windows
@@ -77,8 +93,14 @@ async function printPdf(pdfBuffer, jobId, format) {
         ));
       }
       cmd = sumatraPath;
-      // -print-to imprime en silence sur l'imprimante nommée puis quitte.
-      args = ["-print-to", cfg.PRINTER, "-silent", "-exit-when-done", tmp];
+      // -print-settings impose le format papier au pilote Brother
+      // (sinon le pilote utilise son format par défaut → media mismatch → voyant rouge).
+      const paper = WIN_PAPER[format] ?? "62mm";
+      args = [
+        "-print-to", cfg.PRINTER,
+        "-print-settings", `paper=${paper},fit,noscale`,
+        "-silent", "-exit-when-done", tmp,
+      ];
     } else {
       cmd = "lp";
       // BrCutLabel=OFF : pas de coupe entre chaque étiquette
