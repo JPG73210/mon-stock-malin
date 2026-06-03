@@ -93,8 +93,14 @@ async function printPdf(pdfBuffer, jobId, format) {
         ));
       }
       cmd = sumatraPath;
-      // -print-to imprime en silence sur l'imprimante nommée puis quitte.
-      args = ["-print-to", cfg.PRINTER, "-silent", "-exit-when-done", tmp];
+      // -print-settings impose le format papier au pilote Brother
+      // (sinon le pilote utilise son format par défaut → media mismatch → voyant rouge).
+      const paper = WIN_PAPER[format] ?? "62mm";
+      args = [
+        "-print-to", cfg.PRINTER,
+        "-print-settings", `paper=${paper},fit,noscale`,
+        "-silent", "-exit-when-done", tmp,
+      ];
     } else {
       cmd = "lp";
       // BrCutLabel=OFF : pas de coupe entre chaque étiquette
