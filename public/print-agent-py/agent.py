@@ -55,6 +55,8 @@ LABELS = {
     "62x29":  "29x62",
     "62x100": "62x100",
     "62":     "62",        # rouleau continu 62 mm
+    "29x50":  "29",        # rouleau continu 29 mm (DK-22211)
+    "50x29":  "29",
     "30x62":  "62",
     "62x30":  "62",
 }
@@ -83,7 +85,9 @@ def pdf_to_images(pdf_bytes: bytes) -> list[Image.Image]:
 
 
 def print_pdf(pdf_b64: str, fmt: str) -> None:
-    label = LABELS.get(fmt, "62")
+    label = LABELS.get(fmt)
+    if not label:
+        raise RuntimeError(f"Format d'étiquette non supporté par l'agent: {fmt}")
     pdf_bytes = base64.b64decode(pdf_b64)
     pages = pdf_to_images(pdf_bytes)
     if not pages:
