@@ -88,66 +88,67 @@ export async function generateLabelPdf(
     if (i > 0) doc.addPage([pageW, pageH], pageW > pageH ? "landscape" : "portrait");
 
     if (isGrandFroid) {
-      // Layout 29×50 portrait : QR petit centré en haut, tout le texte ci-dessous
-      // tourné de 90° (se lit dans le sens de la longueur du ruban), aussi gros que possible.
+      // Layout 29×50 portrait : QR centré en haut (agrandi d'1/3 vs ancien 14 mm),
+      // 5 lignes texte tournées -90° en dessous, espacement égal, remplissent l'espace.
+      // Ordre fixe : 1) ID (gras, plus gros) 2) produit 3) animal/fruit 4) poids 5) date
       doc.setFillColor(255, 255, 255);
       doc.rect(0, 0, w, h, "F");
       const pad = 1.2;
-      const qrSide = Math.min(w - pad * 2, 14);
+      const qrSide = Math.min(w - pad * 2, 14 * 4 / 3); // ≈ 18.67 mm
       const qrX = (w - qrSide) / 2;
       const qrY = pad;
       doc.addImage(qr, "PNG", qrX, qrY, qrSide, qrSide);
 
       const id = data.id ? String(data.id) : "";
       const produit = data.produit ? String(data.produit) : "";
-      const secondary = [data.animal, data.fruit].filter((v) => v != null && String(v).trim() !== "").map(String).join(" / ");
-      const poidsTxt = data.poids != null && String(data.poids).trim() !== "" ? `${data.poids} ${data.unite ?? ""}`.trim() : "";
-      const bagueTxt = data.bague && String(data.bague).trim() !== "" ? String(data.bague) : "";
+      const secondary = [data.animal, data.fruit]
+        .filter((v) => v != null && String(v).trim() !== "")
+        .map(String).join(" / ");
+      const poidsTxt = data.poids != null && String(data.poids).trim() !== ""
+        ? `${data.poids} ${data.unite ?? ""}`.trim() : "";
       const dateTxt = data.date ? String(data.date) : "";
-      const lines: { text: string; bold: boolean; weight: number }[] = [];
-      if (id) lines.push({ text: id, bold: true, weight: 1.5 });
-      for (const t of [produit, secondary, poidsTxt, bagueTxt, dateTxt]) {
-        if (t && t.trim() !== "") lines.push({ text: t, bold: false, weight: 1 });
-      }
+      // Ordre imposé : ID / produit / secondary / poids / date — on garde les slots
+      // vides pour que l'espacement reste identique d'une étiquette à l'autre.
+      const slots: { text: string; bold: boolean; scale: number }[] = [
+        { text: id,        bold: true,  scale: 1.45 },
+        { text: produit,   bold: false, scale: 1    },
+        { text: secondary, bold: false, scale: 1    },
+        { text: poidsTxt,  bold: false, scale: 1    },
+        { text: dateTxt,   bold: false, scale: 1    },
+      ];
+      const n = slots.length; // 5 slots fixes
 
-      if (lines.length) {
-        // Zone texte sous le QR : longueur (le long du ruban) = h - qrBottom - pad,
-        // largeur (perpendiculaire) = w - pad*2. Texte tourné de 90° CCW : la longueur
-        // de chaîne occupe la "longueur" verticale, les lignes empilent horizontalement.
-        const textTop = qrY + qrSide + 1.2;
-        const textLen = h - textTop - pad;        // longueur dispo pour chaque ligne
-        const textWidth = w - pad * 2;             // largeur dispo pour empiler les lignes
-        const totalWeight = lines.reduce((a, l) => a + l.weight, 0);
+      const textTop = qrY + qrSide + 1.2;
+      const textLen = h - textTop - pad;     // longueur dispo le long du ruban
+      const textWidth = w - pad * 2;          // largeur totale empilée (sur w)
+      const slotH = textWidth / n;            // hauteur d'un slot (espacement égal)
 
-        const fits = (s: number) => {
-          const lineH = s * 0.42 * 1.15;
-          // Empilement total
-          const stack = lines.reduce((a, l) => a + lineH * l.weight, 0);
-          if (stack > textWidth) return false;
-          for (const l of lines) {
-            doc.setFont("helvetica", l.bold ? "bold" : "normal");
-            doc.setFontSize(s * l.weight);
-            if (doc.getTextWidth(l.text) > textLen) return false;
+      // Plus grande taille qui rentre dans son slot ET dont le texte rentre en longueur.
+      const fits = (s: number) => {
+        for (const sl of slots) {
+          const size = s * sl.scale;
+          if (size * 0.42 > slotH - 0.2) return false; // hauteur de caractère ≤ slot
+          if (sl.text) {
+            doc.setFont("helvetica", sl.bold ? "bold" : "normal");
+            doc.setFontSize(size);
+            if (doc.getTextWidth(sl.text) > textLen) return false;
           }
-          return true;
-        };
-        let s = 24;
-        while (s > 5 && !fits(s)) s -= 0.25;
-
-        const lineH = s * 0.42 * 1.15;
-        const stack = lines.reduce((a, l) => a + lineH * l.weight, 0);
-        // Centre vertical = centre de la zone (le long de w)
-        let xCursor = (w - stack) / 2 + lineH * (lines[0]?.weight ?? 1) / 2;
-        // Centre horizontal du texte = milieu de la longueur
-        const yMid = textTop + textLen / 2;
-        for (const l of lines) {
-          doc.setFont("helvetica", l.bold ? "bold" : "normal");
-          doc.setFontSize(s * l.weight);
-          // angle -90 = rotation CW → texte se lit de haut en bas
-          // (ID = 1re colonne sous le QR, lue de haut en bas)
-          doc.text(l.text, xCursor, yMid, { angle: -90, align: "center", baseline: "middle" });
-          xCursor += lineH * l.weight;
         }
+        return true;
+      };
+      let s = 24;
+      while (s > 4 && !fits(s)) s -= 0.25;
+
+      // Rendu : chaque slot occupe slotH (centre = pad + slotH*(i+0.5)).
+      // Texte tourné -90° (lecture de haut en bas le long du ruban).
+      const yMid = textTop + textLen / 2;
+      for (let i = 0; i < n; i++) {
+        const sl = slots[i];
+        if (!sl.text) continue;
+        const xCenter = pad + slotH * (i + 0.5);
+        doc.setFont("helvetica", sl.bold ? "bold" : "normal");
+        doc.setFontSize(s * sl.scale);
+        doc.text(sl.text, xCenter, yMid, { angle: -90, align: "center", baseline: "middle" });
       }
       continue;
     }
