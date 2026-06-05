@@ -88,16 +88,16 @@ export async function generateLabelPdf(
     if (i > 0) doc.addPage([pageW, pageH], pageW > pageH ? "landscape" : "portrait");
 
     if (isGrandFroid) {
-      // Layout 29×50 portrait : QR centré en haut (agrandi d'1/3 vs ancien 14 mm),
-      // 5 lignes texte tournées -90° en dessous, espacement égal, remplissent l'espace.
-      // Ordre fixe : 1) ID (gras, plus gros) 2) produit 3) animal/fruit 4) poids 5) date
+      // Layout 29×50 portrait :
+      //  - ID en haut, sur toute la largeur, gras, ~45 % plus gros que le texte.
+      //  - QR 18 mm en bas à gauche, sous l'ID.
+      //  - À droite du QR (et sous l'ID), 5 slots à espacement égal qui occupent
+      //    TOUTE la hauteur et TOUTE la largeur restantes :
+      //    produit / animal/fruit / poids / bague / date.
+      //    Textes tournés -90° (colonne étroite → lecture verticale).
       doc.setFillColor(255, 255, 255);
       doc.rect(0, 0, w, h, "F");
       const pad = 1.2;
-      const qrSide = Math.min(w - pad * 2, 14 * 4 / 3); // ≈ 18.67 mm
-      const qrX = (w - qrSide) / 2;
-      const qrY = pad;
-      doc.addImage(qr, "PNG", qrX, qrY, qrSide, qrSide);
 
       const id = data.id ? String(data.id) : "";
       const produit = data.produit ? String(data.produit) : "";
@@ -106,52 +106,77 @@ export async function generateLabelPdf(
         .map(String).join(" / ");
       const poidsTxt = data.poids != null && String(data.poids).trim() !== ""
         ? `${data.poids} ${data.unite ?? ""}`.trim() : "";
+      const bagueTxt = data.bague && String(data.bague).trim() !== "" ? String(data.bague) : "";
       const dateTxt = data.date ? String(data.date) : "";
-      // Ordre imposé : ID / produit / secondary / poids / date — on garde les slots
-      // vides pour que l'espacement reste identique d'une étiquette à l'autre.
-      const slots: { text: string; bold: boolean; scale: number }[] = [
-        { text: id,        bold: true,  scale: 1.45 },
-        { text: produit,   bold: false, scale: 1    },
-        { text: secondary, bold: false, scale: 1    },
-        { text: poidsTxt,  bold: false, scale: 1    },
-        { text: dateTxt,   bold: false, scale: 1    },
+
+      // --- Ligne 1 : ID en haut, pleine largeur, gras, taille maximale. ---
+      const idMaxW = w - pad * 2;
+      const idMaxH = 9;
+      let idSize = 28;
+      doc.setFont("helvetica", "bold");
+      while (idSize > 6) {
+        doc.setFontSize(idSize);
+        if (doc.getTextWidth(id || "AA-000") <= idMaxW && idSize * 0.42 <= idMaxH) break;
+        idSize -= 0.25;
+      }
+      const idH = idSize * 0.42;
+      const idBaseY = pad + idH;
+      if (id) {
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(idSize);
+        doc.text(id, w / 2, idBaseY, { align: "center", baseline: "alphabetic" });
+      }
+
+      // --- QR 18 mm en bas à gauche, sous l'ID. ---
+      const qrSide = Math.min(18, w - pad * 2);
+      const qrX = pad;
+      const qrY = h - pad - qrSide;
+      doc.addImage(qr, "PNG", qrX, qrY, qrSide, qrSide);
+
+      // --- 5 slots à droite du QR, sous l'ID. ---
+      const gap = 1.2;
+      const colLeft = qrX + qrSide + gap;
+      const colRight = w - pad;
+      const colTop = idBaseY + gap;
+      const colBottom = h - pad;
+      const colW = colRight - colLeft;
+      const colH = colBottom - colTop;
+      const slots: { text: string; bold: boolean }[] = [
+        { text: produit,   bold: false },
+        { text: secondary, bold: false },
+        { text: poidsTxt,  bold: false },
+        { text: bagueTxt,  bold: false },
+        { text: dateTxt,   bold: false },
       ];
-      const n = slots.length; // 5 slots fixes
+      const n = slots.length;
+      const slotH = colH / n;
 
-      const textTop = qrY + qrSide + 1.2;
-      const textLen = h - textTop - pad;     // longueur dispo le long du ruban
-      const textWidth = w - pad * 2;          // largeur totale empilée (sur w)
-      const slotH = textWidth / n;            // hauteur d'un slot (espacement égal)
-
-      // Plus grande taille qui rentre dans son slot ET dont le texte rentre en longueur.
+      // Texte tourné -90° → "longueur" = slotH, "hauteur" du caractère ≤ colW.
       const fits = (s: number) => {
+        if (s * 0.42 > colW - 0.2) return false;
         for (const sl of slots) {
-          const size = s * sl.scale;
-          if (size * 0.42 > slotH - 0.2) return false; // hauteur de caractère ≤ slot
-          if (sl.text) {
-            doc.setFont("helvetica", sl.bold ? "bold" : "normal");
-            doc.setFontSize(size);
-            if (doc.getTextWidth(sl.text) > textLen) return false;
-          }
+          if (!sl.text) continue;
+          doc.setFont("helvetica", sl.bold ? "bold" : "normal");
+          doc.setFontSize(s);
+          if (doc.getTextWidth(sl.text) > slotH - 0.4) return false;
         }
         return true;
       };
-      let s = 24;
-      while (s > 4 && !fits(s)) s -= 0.25;
+      let s = 16;
+      while (s > 3 && !fits(s)) s -= 0.25;
 
-      // Rendu : chaque slot occupe slotH (centre = pad + slotH*(i+0.5)).
-      // Texte tourné -90° (lecture de haut en bas le long du ruban).
-      const yMid = textTop + textLen / 2;
+      const xCenter = (colLeft + colRight) / 2;
       for (let i = 0; i < n; i++) {
         const sl = slots[i];
         if (!sl.text) continue;
-        const xCenter = pad + slotH * (i + 0.5);
+        const yMid = colTop + slotH * (i + 0.5);
         doc.setFont("helvetica", sl.bold ? "bold" : "normal");
-        doc.setFontSize(s * sl.scale);
+        doc.setFontSize(s);
         doc.text(sl.text, xCenter, yMid, { angle: -90, align: "center", baseline: "middle" });
       }
       continue;
     }
+
 
     const pad = 1;
     const portrait = h > w * 1.4; // tall labels → QR en haut, texte en bas
