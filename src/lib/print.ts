@@ -107,6 +107,7 @@ export async function generateLabelPdf(
         .map(String).join(" / ");
       const poidsTxt = data.poids != null && String(data.poids).trim() !== ""
         ? `${data.poids} ${data.unite ?? ""}`.trim() : "";
+      const bagueTxt = data.bague && String(data.bague).trim() !== "" ? `N° ${data.bague}` : "";
       const dateTxt = data.date ? String(data.date) : "";
 
       // Tailles fixes (pt) — calées sur P-touch.
@@ -149,6 +150,7 @@ export async function generateLabelPdf(
         { text: produit,   size: produitSize, bold: true  },
         { text: secondary, size: otherSize,   bold: false },
         { text: poidsTxt,  size: otherSize,   bold: false },
+        { text: bagueTxt,  size: otherSize,   bold: false },
         { text: dateTxt,   size: otherSize,   bold: false },
       ].filter((l) => l.text);
 
