@@ -71,9 +71,12 @@ export async function generateLabelPdf(
   data: LabelData,
   quantite = 1,
 ): Promise<string> {
-  const { w: pageW, h: pageH } = formatSize(fmt);
+  const sized = formatSize(fmt);
   const isGrandFroid = normalizeFormat(fmt) === "29x50";
-  // Pour "29x50" : layout natif portrait 29×50 (QR carré en haut, ID + texte en dessous à l'horizontale).
+  // Pour "29x50" : on travaille en paysage 50×29 (label horizontal),
+  // brother_ql se charge de tourner pour le ruban 29 mm.
+  const pageW = isGrandFroid ? 50 : sized.w;
+  const pageH = isGrandFroid ? 29 : sized.h;
   const w = pageW;
   const h = pageH;
   const doc = new jsPDF({ unit: "mm", format: [pageW, pageH], orientation: pageW > pageH ? "landscape" : "portrait" });
@@ -86,6 +89,7 @@ export async function generateLabelPdf(
 
   for (let i = 0; i < quantite; i++) {
     if (i > 0) doc.addPage([pageW, pageH], pageW > pageH ? "landscape" : "portrait");
+
 
     if (isGrandFroid) {
       // Layout 29×50 portrait :
