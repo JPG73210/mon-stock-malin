@@ -144,16 +144,21 @@ export async function generateLabelPdf(
         { text: dateTxt,   size: otherSize,   bold: false },
       ].filter((l) => l.text);
 
-      // Hauteur totale demandée (en mm) ≈ Σ size * 0.42, espacements répartis.
-      const totalTextH = lines.reduce((a, l) => a + l.size * 0.42, 0);
-      const gap = lines.length > 1 ? Math.max(0.4, (colH - totalTextH) / (lines.length - 1)) : 0;
+      // 1ʳᵉ ligne alignée verticalement sur la baseline de l'ID.
+      // Puis lignes suivantes espacées régulièrement jusqu'en bas.
+      const firstBaseline = idBaseline;
+      const remaining = lines.slice(1);
+      const remainingTextH = remaining.reduce((a, l) => a + l.size * 0.42, 0);
+      const spaceForRem = colBottom - firstBaseline;
+      const gap = remaining.length > 0
+        ? Math.max(0.4, (spaceForRem - remainingTextH) / remaining.length)
+        : 0;
 
-      let y = colTop;
-      for (const l of lines) {
-        const charH = l.size * 0.42;
-        y += charH;
+      let y = firstBaseline;
+      for (let li = 0; li < lines.length; li++) {
+        const l = lines[li];
+        if (li > 0) y += gap + l.size * 0.42;
         doc.setFont("helvetica", l.bold ? "bold" : "normal");
-        // Réduit la taille si débordement horizontal.
         let s = l.size;
         doc.setFontSize(s);
         while (s > 5 && doc.getTextWidth(l.text) > colW) {
@@ -161,10 +166,10 @@ export async function generateLabelPdf(
           doc.setFontSize(s);
         }
         doc.text(l.text, colLeft, y, { baseline: "alphabetic", maxWidth: colW });
-        y += gap;
       }
       continue;
     }
+
 
 
 
