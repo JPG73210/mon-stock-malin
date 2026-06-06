@@ -114,13 +114,21 @@ export async function generateLabelPdf(
       const produitSize = 14;
       const otherSize = 12;
 
-      // --- ID en haut-gauche (baseline alignée avec la 1ʳᵉ ligne droite) ---
-      const idBaseline = pad + idSize * 0.36;
+      // --- ID en haut-gauche (limité à la largeur du QR pour ne pas chevaucher) ---
+      const qrSideTarget = 16;
+      const idMaxW = qrSideTarget; // ID reste au-dessus du QR
+      let idActual = idSize;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(idActual);
+      while (idActual > 6 && id && doc.getTextWidth(id) > idMaxW) {
+        idActual -= 0.25;
+        doc.setFontSize(idActual);
+      }
+      const idBaseline = pad + idActual * 0.36;
       if (id) {
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(idSize);
         doc.text(id, pad, idBaseline, { baseline: "alphabetic" });
       }
+
 
 
       // --- QR ~16 mm, en bas-gauche, sous l'ID ---
