@@ -150,6 +150,7 @@ export async function generateLabelPdf(
         { text: produit,   size: produitSize, bold: true  },
         { text: secondary, size: otherSize,   bold: false },
         { text: poidsTxt,  size: otherSize,   bold: false },
+        { text: bagueTxt,  size: otherSize,   bold: false },
         { text: dateTxt,   size: otherSize,   bold: false },
       ].filter((l) => l.text);
 
