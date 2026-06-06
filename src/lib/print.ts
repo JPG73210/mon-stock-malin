@@ -115,25 +115,39 @@ export async function generateLabelPdf(
       const produitSize = 14;
       const otherSize = 12;
 
-      // --- ID en haut-gauche (limité à la largeur du QR pour ne pas chevaucher) ---
+      // --- ID en haut-gauche sur 2 lignes (limité à la largeur du QR) ---
       const qrSideTarget = 16;
-      const idMaxW = qrSideTarget; // ID reste au-dessus du QR
-      let idActual = idSize;
+      const idMaxW = qrSideTarget;
+      // Split intelligent : sur le dernier "-" si présent, sinon milieu.
+      let idL1 = id, idL2 = "";
+      if (id) {
+        const lastDash = id.lastIndexOf("-");
+        if (lastDash > 0 && lastDash < id.length - 1) {
+          idL1 = id.slice(0, lastDash);
+          idL2 = id.slice(lastDash + 1);
+        }
+      }
+      const idHMax = 9; // mm dispo au-dessus du QR (≈ 29 - 1.2 - 16 - 1.2 - marge)
+      let idActual = 26; // on tente très grand puis on réduit
       doc.setFont("helvetica", "bold");
       doc.setFontSize(idActual);
-      while (idActual > 6 && id && doc.getTextWidth(id) > idMaxW) {
-        idActual -= 0.25;
-        doc.setFontSize(idActual);
-      }
-      const idBaseline = pad + idActual * 0.36;
-      if (id) {
-        doc.text(id, pad, idBaseline, { baseline: "alphabetic" });
-      }
-
-
+      const idFits = (s: number) => {
+        doc.setFontSize(s);
+        const w1 = idL1 ? doc.getTextWidth(idL1) : 0;
+        const w2 = idL2 ? doc.getTextWidth(idL2) : 0;
+        if (Math.max(w1, w2) > idMaxW) return false;
+        const totalH = s * 0.42 * (idL2 ? 2 : 1) + (idL2 ? s * 0.12 : 0);
+        return totalH <= idHMax;
+      };
+      while (idActual > 6 && id && !idFits(idActual)) idActual -= 0.25;
+      doc.setFontSize(idActual);
+      const idLineH = idActual * 0.42;
+      const idBaseline = pad + idLineH;
+      if (idL1) doc.text(idL1, pad, idBaseline, { baseline: "alphabetic" });
+      if (idL2) doc.text(idL2, pad, idBaseline + idLineH + idActual * 0.12, { baseline: "alphabetic" });
 
       // --- QR ~16 mm, en bas-gauche, sous l'ID ---
-      const qrSide = Math.min(16, h - (pad + idSize * 0.42 + 0.5) - pad);
+      const qrSide = Math.min(16, h - pad - (idBaseline + (idL2 ? idLineH + idActual * 0.12 : 0)) - 0.5);
       const qrX = pad;
       const qrY = h - pad - qrSide;
       doc.addImage(qr, "PNG", qrX, qrY, qrSide, qrSide);
