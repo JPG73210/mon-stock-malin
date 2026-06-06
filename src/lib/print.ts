@@ -71,9 +71,12 @@ export async function generateLabelPdf(
   data: LabelData,
   quantite = 1,
 ): Promise<string> {
-  const { w: pageW, h: pageH } = formatSize(fmt);
+  const sized = formatSize(fmt);
   const isGrandFroid = normalizeFormat(fmt) === "29x50";
-  // Pour "29x50" : layout natif portrait 29×50 (QR carré en haut, ID + texte en dessous à l'horizontale).
+  // Pour "29x50" : on travaille en paysage 50×29 (label horizontal),
+  // brother_ql se charge de tourner pour le ruban 29 mm.
+  const pageW = isGrandFroid ? 50 : sized.w;
+  const pageH = isGrandFroid ? 29 : sized.h;
   const w = pageW;
   const h = pageH;
   const doc = new jsPDF({ unit: "mm", format: [pageW, pageH], orientation: pageW > pageH ? "landscape" : "portrait" });
@@ -87,14 +90,12 @@ export async function generateLabelPdf(
   for (let i = 0; i < quantite; i++) {
     if (i > 0) doc.addPage([pageW, pageH], pageW > pageH ? "landscape" : "portrait");
 
+
     if (isGrandFroid) {
-      // Layout 29×50 portrait :
-      //  - ID en haut, sur toute la largeur, gras, ~45 % plus gros que le texte.
-      //  - QR 18 mm en bas à gauche, sous l'ID.
-      //  - À droite du QR (et sous l'ID), 5 slots à espacement égal qui occupent
-      //    TOUTE la hauteur et TOUTE la largeur restantes :
-      //    produit / animal/fruit / poids / bague / date.
-      //    Textes tournés -90° (colonne étroite → lecture verticale).
+      // Layout 29×50 paysage (w=50, h=29) :
+      //  - ID en haut-gauche, gras, taille 16.
+      //  - QR ~16 mm en bas-gauche, sous l'ID.
+      //  - À droite : 4 lignes horizontales (produit=14, animal=12, poids=12, date=12).
       doc.setFillColor(255, 255, 255);
       doc.rect(0, 0, w, h, "F");
       const pad = 1.2;
@@ -106,76 +107,64 @@ export async function generateLabelPdf(
         .map(String).join(" / ");
       const poidsTxt = data.poids != null && String(data.poids).trim() !== ""
         ? `${data.poids} ${data.unite ?? ""}`.trim() : "";
-      const bagueTxt = data.bague && String(data.bague).trim() !== "" ? String(data.bague) : "";
       const dateTxt = data.date ? String(data.date) : "";
 
-      // --- Ligne 1 : ID en haut, pleine largeur, gras, taille maximale. ---
-      const idMaxW = w - pad * 2;
-      const idMaxH = 9;
-      let idSize = 28;
-      doc.setFont("helvetica", "bold");
-      while (idSize > 6) {
-        doc.setFontSize(idSize);
-        if (doc.getTextWidth(id || "AA-000") <= idMaxW && idSize * 0.42 <= idMaxH) break;
-        idSize -= 0.25;
-      }
-      const idH = idSize * 0.42;
-      const idBaseY = pad + idH;
+      // Tailles fixes (pt) — calées sur P-touch.
+      const idSize = 16;
+      const produitSize = 14;
+      const otherSize = 12;
+
+      // --- ID en haut-gauche ---
       if (id) {
         doc.setFont("helvetica", "bold");
         doc.setFontSize(idSize);
-        doc.text(id, w / 2, idBaseY, { align: "center", baseline: "alphabetic" });
+        doc.text(id, pad, pad + idSize * 0.36, { baseline: "alphabetic" });
       }
 
-      // --- QR 18 mm en bas à gauche, sous l'ID. ---
-      const qrSide = Math.min(18, w - pad * 2);
+      // --- QR ~16 mm, en bas-gauche, sous l'ID ---
+      const qrSide = Math.min(16, h - (pad + idSize * 0.42 + 0.5) - pad);
       const qrX = pad;
       const qrY = h - pad - qrSide;
       doc.addImage(qr, "PNG", qrX, qrY, qrSide, qrSide);
 
-      // --- 5 slots à droite du QR, sous l'ID. ---
-      const gap = 1.2;
-      const colLeft = qrX + qrSide + gap;
+      // --- Colonne droite : 4 lignes horizontales empilées ---
+      const colLeft = qrX + qrSide + 1.5;
       const colRight = w - pad;
-      const colTop = idBaseY + gap;
+      const colTop = pad;
       const colBottom = h - pad;
       const colW = colRight - colLeft;
       const colH = colBottom - colTop;
-      const slots: { text: string; bold: boolean }[] = [
-        { text: produit,   bold: false },
-        { text: secondary, bold: false },
-        { text: poidsTxt,  bold: false },
-        { text: bagueTxt,  bold: false },
-        { text: dateTxt,   bold: false },
-      ];
-      const n = slots.length;
-      const slotH = colH / n;
 
-      // Texte tourné -90° → "longueur" = slotH, "hauteur" du caractère ≤ colW.
-      const fits = (s: number) => {
-        if (s * 0.42 > colW - 0.2) return false;
-        for (const sl of slots) {
-          if (!sl.text) continue;
-          doc.setFont("helvetica", sl.bold ? "bold" : "normal");
-          doc.setFontSize(s);
-          if (doc.getTextWidth(sl.text) > slotH - 0.4) return false;
-        }
-        return true;
-      };
-      let s = 16;
-      while (s > 3 && !fits(s)) s -= 0.25;
+      const lines: { text: string; size: number; bold: boolean }[] = [
+        { text: produit,   size: produitSize, bold: true  },
+        { text: secondary, size: otherSize,   bold: false },
+        { text: poidsTxt,  size: otherSize,   bold: false },
+        { text: dateTxt,   size: otherSize,   bold: false },
+      ].filter((l) => l.text);
 
-      const xCenter = (colLeft + colRight) / 2;
-      for (let i = 0; i < n; i++) {
-        const sl = slots[i];
-        if (!sl.text) continue;
-        const yMid = colTop + slotH * (i + 0.5);
-        doc.setFont("helvetica", sl.bold ? "bold" : "normal");
+      // Hauteur totale demandée (en mm) ≈ Σ size * 0.42, espacements répartis.
+      const totalTextH = lines.reduce((a, l) => a + l.size * 0.42, 0);
+      const gap = lines.length > 1 ? Math.max(0.4, (colH - totalTextH) / (lines.length - 1)) : 0;
+
+      let y = colTop;
+      for (const l of lines) {
+        const charH = l.size * 0.42;
+        y += charH;
+        doc.setFont("helvetica", l.bold ? "bold" : "normal");
+        // Réduit la taille si débordement horizontal.
+        let s = l.size;
         doc.setFontSize(s);
-        doc.text(sl.text, xCenter, yMid, { angle: -90, align: "center", baseline: "middle" });
+        while (s > 5 && doc.getTextWidth(l.text) > colW) {
+          s -= 0.25;
+          doc.setFontSize(s);
+        }
+        doc.text(l.text, colLeft, y, { baseline: "alphabetic", maxWidth: colW });
+        y += gap;
       }
       continue;
     }
+
+
 
 
     const pad = 1;

@@ -12,7 +12,11 @@ export function LabelPreviewInline({
 }: { fmt: string; data: LabelData; scale?: number }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [err, setErr] = useState(false);
-  const { w, h } = formatSize(fmt);
+  const sz = formatSize(fmt);
+  // Pour le 29×50, le PDF est généré en paysage 50×29 — on aligne l'aperçu.
+  const isGrandFroid = (sz.w === 29 && sz.h === 50) || (sz.w === 50 && sz.h === 29);
+  const w = isGrandFroid ? 50 : sz.w;
+  const h = isGrandFroid ? 29 : sz.h;
 
   useEffect(() => {
     if (fmt === "Pas d'étiquettes") return;
