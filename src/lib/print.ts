@@ -150,7 +150,8 @@ export async function generateLabelPdf(
       if (idL2) doc.text(idL2, pad, idBaseline + idLineH + idActual * 0.12, { baseline: "alphabetic" });
 
       // --- QR ~16 mm, en bas-gauche, sous l'ID ---
-      const qrSide = Math.min(16, h - pad - (idBaseline + (idL2 ? idLineH + idActual * 0.12 : 0)) - 0.5);
+      const gapIdQr = 2.0; // intervalle vertical entre ID et QR (mm)
+      const qrSide = Math.min(16, h - pad - (idBaseline + (idL2 ? idLineH + idActual * 0.12 : 0)) - gapIdQr);
       const qrX = pad;
       const qrY = h - pad - qrSide;
       doc.addImage(qr, "PNG", qrX, qrY, qrSide, qrSide);
