@@ -115,9 +115,11 @@ export async function generateLabelPdf(
       const produitSize = 14;
       const otherSize = 12;
 
-      // --- ID en haut-gauche sur 2 lignes (limité à la largeur du QR) ---
-      const qrSideTarget = 16;
-      const idMaxW = qrSideTarget;
+      // --- ID en haut-gauche sur 2 lignes (max possible) ---
+      // QR réduit à 13 mm pour libérer de la hauteur pour l'ID.
+      const qrSideTarget = 13;
+      // L'ID peut s'étendre jusqu'à la colonne droite (avant le texte).
+      const idMaxW = qrSideTarget + 1.5; // largeur QR + petit gap, sans déborder sur le texte
       // Split intelligent : sur le dernier "-" si présent, sinon milieu.
       let idL1 = id, idL2 = "";
       if (id) {
@@ -127,8 +129,9 @@ export async function generateLabelPdf(
           idL2 = id.slice(lastDash + 1);
         }
       }
-      const idHMax = 9; // mm dispo au-dessus du QR (≈ 29 - 1.2 - 16 - 1.2 - marge)
-      let idActual = 26; // on tente très grand puis on réduit
+      // Hauteur dispo au-dessus du QR : h - pad*2 - qr - petit gap
+      const idHMax = h - pad * 2 - qrSideTarget - 0.8;
+      let idActual = 40; // on tente très grand puis on réduit
       doc.setFont("helvetica", "bold");
       doc.setFontSize(idActual);
       const idFits = (s: number) => {
