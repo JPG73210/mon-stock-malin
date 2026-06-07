@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { Heart, Trash2, Search, Printer, Pencil, Eye, Download, Share2, Medal, ArrowLeftRight, ScanLine } from "lucide-react";
 import { QrCode } from "@/components/QrCode";
 import { printLabelAirprint, downloadLabelPdf, shareLabelPdf } from "@/lib/print";
+import { printStockProductsA4, printStockWinesA4 } from "@/lib/printStock";
 import { ProductEditDialog } from "@/components/ProductEditDialog";
 import { WineEditDialog } from "@/components/WineEditDialog";
 import { LabelPreviewDialog } from "@/components/LabelPreviewDialog";
@@ -162,6 +163,15 @@ function ProductsList() {
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <p className="text-sm text-muted-foreground">{filtered.length} produit(s)</p>
         <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() =>
+              printStockProductsA4(filtered as any).catch(() => toast.error("Impression impossible"))
+            }
+          >
+            <Printer className="mr-1 h-4 w-4" /> Imprimer stock (A4)
+          </Button>
           <Button size="sm" variant="outline" onClick={() => setSortieOpen(true)}>
             <ScanLine className="mr-1 h-4 w-4" /> Scanner sortie
           </Button>
@@ -412,7 +422,18 @@ export function WinesList() {
           </SelectContent>
         </Select>
       </div>
-      <p className="text-sm text-muted-foreground">{filtered.length} vin(s)</p>
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <p className="text-sm text-muted-foreground">{filtered.length} vin(s)</p>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() =>
+            printStockWinesA4(filtered as any).catch(() => toast.error("Impression impossible"))
+          }
+        >
+          <Printer className="mr-1 h-4 w-4" /> Imprimer stock (A4)
+        </Button>
+      </div>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {filtered.map((w: any) => (
           <button key={w.id} onClick={() => openDetail(w)} className="text-left rounded-xl border bg-card p-3 hover:border-primary transition relative flex gap-3">

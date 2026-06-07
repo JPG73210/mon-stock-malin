@@ -44,7 +44,7 @@ const empty: Form = {
   date_creation: new Date().toISOString().slice(0, 7),
   version: "", bague: "", produit: "", animal: "", fruit: "",
   quantite: 1, poids: "", unite_poids: "Gr",
-  etiquette_format: "Pas d'étiquettes",
+  etiquette_format: "29x50",
   needs_label: false, notes: "",
   legacy_code: "", use_legacy: false,
 };
