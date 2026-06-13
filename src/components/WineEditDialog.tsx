@@ -122,6 +122,32 @@ export function WineEditDialog({
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-auto">
         <DialogHeader><DialogTitle>{f.chateau || "Vin"}</DialogTitle></DialogHeader>
+        <div className="p-3 rounded-md border space-y-2">
+          <p className="text-sm font-medium">Photo de l'étiquette</p>
+          {photoPreview ? (
+            <div className="relative">
+              <img src={photoPreview} alt="aperçu" className="w-full max-h-64 rounded-md object-contain bg-muted" />
+              <Button
+                type="button" size="icon" variant="destructive"
+                className="absolute top-2 right-2 h-7 w-7"
+                onClick={() => { setPhotoFile(null); setPhotoPreview(null); setRemovePhoto(true); }}
+                title="Retirer la photo"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <div className="aspect-video rounded-md border-2 border-dashed flex items-center justify-center text-xs text-muted-foreground">
+              Aucune photo
+            </div>
+          )}
+          <label className="block">
+            <input type="file" accept="image/*" capture="environment" className="hidden" onChange={onPickPhoto} />
+            <span className="inline-flex items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm cursor-pointer hover:bg-muted">
+              <Upload className="h-4 w-4" /> {photoPreview ? "Remplacer" : "Prendre / Importer"}
+            </span>
+          </label>
+        </div>
         <div className="grid sm:grid-cols-2 gap-3">
           <Row l="Château / Domaine"><ManagedSelect field="chateau" value={f.chateau ?? ""} onChange={(v) => setF({ ...f, chateau: v })} /></Row>
           <Row l="Type"><ManagedSelect field="type_vin" value={f.type_vin ?? ""} onChange={(v) => setF({ ...f, type_vin: v })} /></Row>
