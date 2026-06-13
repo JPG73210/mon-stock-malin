@@ -11,9 +11,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { ManagedSelect } from "@/components/ManagedSelect";
 import { toast } from "sonner";
-import { Save, Trash2, Heart, Trophy } from "lucide-react";
+import { Save, Trash2, Heart, Trophy, Printer } from "lucide-react";
 import { cn } from "@/lib/utils";
 import coffreReserve from "@/assets/coffre-reserve.png";
+import { enqueuePrintJob } from "@/lib/print";
 
 const MEDAL_COLORS: Record<string, string> = {
   or: "text-yellow-500",
