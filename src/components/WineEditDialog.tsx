@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { ManagedSelect } from "@/components/ManagedSelect";
 import { toast } from "sonner";
-import { Save, Trash2, Heart, Trophy, Printer } from "lucide-react";
+import { Save, Trash2, Heart, Trophy, Printer, Upload, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import coffreReserve from "@/assets/coffre-reserve.png";
 import { enqueuePrintJob } from "@/lib/print";
@@ -34,18 +34,53 @@ export function WineEditDialog({
 }: { wine: any | null; open: boolean; onClose: () => void }) {
   const qc = useQueryClient();
   const [f, setF] = useState<any>(wine ?? {});
-  useEffect(() => { if (wine) setF({ ...wine }); }, [wine]);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [removePhoto, setRemovePhoto] = useState(false);
+
+  useEffect(() => {
+    if (!wine) return;
+    setF({ ...wine });
+    setPhotoFile(null);
+    setRemovePhoto(false);
+    setPhotoPreview(null);
+    if (wine.photo_url) {
+      supabase.storage.from("wine-photos").createSignedUrl(wine.photo_url, 600)
+        .then(({ data }) => setPhotoPreview(data?.signedUrl ?? null));
+    }
+  }, [wine]);
+
+  function onPickPhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0] ?? null;
+    setPhotoFile(file);
+    setRemovePhoto(false);
+    setPhotoPreview(file ? URL.createObjectURL(file) : null);
+  }
 
   const save = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("wines").update({
+      let photo_url: string | null | undefined = undefined;
+      if (photoFile) {
+        const { data: u } = await supabase.auth.getUser();
+        const uid = u.user?.id;
+        if (!uid) throw new Error("Non authentifié");
+        const path = `${uid}/${Date.now()}-${photoFile.name}`;
+        const { error: upErr } = await supabase.storage.from("wine-photos").upload(path, photoFile);
+        if (upErr) throw upErr;
+        photo_url = path;
+      } else if (removePhoto) {
+        photo_url = null;
+      }
+      const payload: any = {
         chateau: f.chateau || null, type_vin: f.type_vin, couleur: f.couleur,
         millesime: f.millesime ? Number(f.millesime) : null,
         emplacement: f.emplacement, code_barre: f.code_barre || null,
         quantite: Number(f.quantite) || 1, favori: !!f.favori,
         medailles: f.medailles ?? [],
         notes: f.notes || null,
-      }).eq("id", f.id);
+      };
+      if (photo_url !== undefined) payload.photo_url = photo_url;
+      const { error } = await supabase.from("wines").update(payload).eq("id", f.id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -87,6 +122,32 @@ export function WineEditDialog({
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-auto">
         <DialogHeader><DialogTitle>{f.chateau || "Vin"}</DialogTitle></DialogHeader>
+        <div className="p-3 rounded-md border space-y-2">
+          <p className="text-sm font-medium">Photo de l'étiquette</p>
+          {photoPreview ? (
+            <div className="relative">
+              <img src={photoPreview} alt="aperçu" className="w-full max-h-64 rounded-md object-contain bg-muted" />
+              <Button
+                type="button" size="icon" variant="destructive"
+                className="absolute top-2 right-2 h-7 w-7"
+                onClick={() => { setPhotoFile(null); setPhotoPreview(null); setRemovePhoto(true); }}
+                title="Retirer la photo"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <div className="aspect-video rounded-md border-2 border-dashed flex items-center justify-center text-xs text-muted-foreground">
+              Aucune photo
+            </div>
+          )}
+          <label className="block">
+            <input type="file" accept="image/*" capture="environment" className="hidden" onChange={onPickPhoto} />
+            <span className="inline-flex items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm cursor-pointer hover:bg-muted">
+              <Upload className="h-4 w-4" /> {photoPreview ? "Remplacer" : "Prendre / Importer"}
+            </span>
+          </label>
+        </div>
         <div className="grid sm:grid-cols-2 gap-3">
           <Row l="Château / Domaine"><ManagedSelect field="chateau" value={f.chateau ?? ""} onChange={(v) => setF({ ...f, chateau: v })} /></Row>
           <Row l="Type"><ManagedSelect field="type_vin" value={f.type_vin ?? ""} onChange={(v) => setF({ ...f, type_vin: v })} /></Row>
