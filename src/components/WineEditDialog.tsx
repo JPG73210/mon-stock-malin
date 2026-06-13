@@ -69,6 +69,19 @@ export function WineEditDialog({
     },
   });
 
+  async function printOneLabel() {
+    const parts = [f.type_vin, f.chateau, f.millesime].filter(Boolean);
+    const id = f.code_barre || parts.join(" ").trim() || `VIN-${f.id}`;
+    try {
+      await enqueuePrintJob("23x23v", {
+        id, produit: f.chateau, animal: f.type_vin, date: f.millesime,
+      }, 1);
+      toast.success("1 étiquette envoyée à l'imprimante");
+    } catch (e: any) {
+      toast.error(e.message ?? "Erreur impression");
+    }
+  }
+
   if (!wine) return null;
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
@@ -118,6 +131,12 @@ export function WineEditDialog({
           </div>
         </div>
         <Row l="Notes"><Textarea value={f.notes ?? ""} onChange={(e) => setF({ ...f, notes: e.target.value })} rows={2} /></Row>
+        <div className="flex items-center gap-3 p-3 rounded-md border bg-muted/30">
+          <Button type="button" size="icon" variant="outline" onClick={printOneLabel} title="Imprimer 1 étiquette QR">
+            <Printer className="h-4 w-4" />
+          </Button>
+          <Label className="flex-1">Imprimer 1 étiquette QR</Label>
+        </div>
         <DialogFooter>
           <Button variant="destructive" onClick={() => del.mutate()} disabled={del.isPending}>
             <Trash2 className="mr-2 h-4 w-4" /> Supprimer
