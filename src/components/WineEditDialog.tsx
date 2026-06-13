@@ -34,18 +34,53 @@ export function WineEditDialog({
 }: { wine: any | null; open: boolean; onClose: () => void }) {
   const qc = useQueryClient();
   const [f, setF] = useState<any>(wine ?? {});
-  useEffect(() => { if (wine) setF({ ...wine }); }, [wine]);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [removePhoto, setRemovePhoto] = useState(false);
+
+  useEffect(() => {
+    if (!wine) return;
+    setF({ ...wine });
+    setPhotoFile(null);
+    setRemovePhoto(false);
+    setPhotoPreview(null);
+    if (wine.photo_url) {
+      supabase.storage.from("wine-photos").createSignedUrl(wine.photo_url, 600)
+        .then(({ data }) => setPhotoPreview(data?.signedUrl ?? null));
+    }
+  }, [wine]);
+
+  function onPickPhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0] ?? null;
+    setPhotoFile(file);
+    setRemovePhoto(false);
+    setPhotoPreview(file ? URL.createObjectURL(file) : null);
+  }
 
   const save = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("wines").update({
+      let photo_url: string | null | undefined = undefined;
+      if (photoFile) {
+        const { data: u } = await supabase.auth.getUser();
+        const uid = u.user?.id;
+        if (!uid) throw new Error("Non authentifié");
+        const path = `${uid}/${Date.now()}-${photoFile.name}`;
+        const { error: upErr } = await supabase.storage.from("wine-photos").upload(path, photoFile);
+        if (upErr) throw upErr;
+        photo_url = path;
+      } else if (removePhoto) {
+        photo_url = null;
+      }
+      const payload: any = {
         chateau: f.chateau || null, type_vin: f.type_vin, couleur: f.couleur,
         millesime: f.millesime ? Number(f.millesime) : null,
         emplacement: f.emplacement, code_barre: f.code_barre || null,
         quantite: Number(f.quantite) || 1, favori: !!f.favori,
         medailles: f.medailles ?? [],
         notes: f.notes || null,
-      }).eq("id", f.id);
+      };
+      if (photo_url !== undefined) payload.photo_url = photo_url;
+      const { error } = await supabase.from("wines").update(payload).eq("id", f.id);
       if (error) throw error;
     },
     onSuccess: () => {
