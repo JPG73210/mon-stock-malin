@@ -394,17 +394,18 @@ export function WinesList() {
       const { data: u } = await supabase.auth.getUser();
       const userId = u.user?.id;
       const { data: row } = await supabase.from("wines")
-        .select("chateau, type, couleur, millesime, quantite").eq("id", id).maybeSingle();
+        .select("chateau, type_vin, couleur, millesime, quantite").eq("id", id).maybeSingle();
       const { error } = await supabase.from("wines").update({ deleted_at: new Date().toISOString() }).eq("id", id);
       if (error) throw error;
       if (userId && row && (row.quantite ?? 0) > 0) {
         await supabase.from("stock_movements").insert({
           user_id: userId, kind: "wine", item_id: id,
-          label: [row.chateau, row.type, row.couleur, row.millesime].filter(Boolean).join(" / "),
+          label: [row.chateau, row.type_vin, row.couleur, row.millesime].filter(Boolean).join(" / "),
           code: null, delta: -(row.quantite ?? 0), reason: "out",
           note: "Suppression depuis le stock",
         });
       }
+
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["wines"] });
