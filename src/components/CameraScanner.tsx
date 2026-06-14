@@ -35,34 +35,60 @@ export function CameraScanner({
       ]);
     }
     hints.set(DecodeHintType.TRY_HARDER, true);
-    const reader = new BrowserMultiFormatReader(hints);
+    // Decode roughly 8x/sec for snappier recognition
+    const reader = new BrowserMultiFormatReader(hints, { delayBetweenScanAttempts: 120 });
     let controls: { stop: () => void } | null = null;
+    let stopped = false;
+
     (async () => {
       try {
-        // Prefer rear camera on phones
-        const devices = await BrowserMultiFormatReader.listVideoInputDevices().catch(() => []);
-        const rear = devices.find((d) => /back|rear|environment/i.test(d.label));
-        controls = await reader.decodeFromVideoDevice(rear?.deviceId, videoRef.current!, (result) => {
-          if (result) {
-            const text = result.getText();
-            const now = Date.now();
-            if (continuous) {
-              if (text === lastScannedRef.current && now - lastTimeRef.current < 1500) return;
-              lastScannedRef.current = text;
-              lastTimeRef.current = now;
-              onScan(text);
-            } else {
-              controls?.stop();
-              onScan(text);
-            }
+        const constraints: MediaStreamConstraints = {
+          audio: false,
+          video: {
+            facingMode: { ideal: "environment" },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+            frameRate: { ideal: 30 },
+            // @ts-expect-error vendor-specific hints, ignored if unsupported
+            focusMode: "continuous",
+          },
+        };
+        controls = await reader.decodeFromConstraints(constraints, videoRef.current!, (result) => {
+          if (!result) return;
+          const text = result.getText();
+          const now = Date.now();
+          if (continuous) {
+            if (text === lastScannedRef.current && now - lastTimeRef.current < 1500) return;
+            lastScannedRef.current = text;
+            lastTimeRef.current = now;
+            onScan(text);
+          } else {
+            controls?.stop();
+            onScan(text);
           }
         });
+        if (stopped) controls?.stop();
+
+        // Apply advanced track constraints: continuous AF + slight zoom for small codes
+        const stream = (videoRef.current?.srcObject as MediaStream | null) ?? null;
+        const track = stream?.getVideoTracks?.()[0];
+        if (track) {
+          const caps: any = track.getCapabilities?.() ?? {};
+          const advanced: any[] = [];
+          if (caps.focusMode?.includes?.("continuous")) advanced.push({ focusMode: "continuous" });
+          if (caps.exposureMode?.includes?.("continuous")) advanced.push({ exposureMode: "continuous" });
+          if (caps.whiteBalanceMode?.includes?.("continuous")) advanced.push({ whiteBalanceMode: "continuous" });
+          if (advanced.length) {
+            try { await track.applyConstraints({ advanced } as any); } catch { /* noop */ }
+          }
+        }
       } catch (e: any) {
         setError(e?.message ?? "Impossible d'accéder à la caméra");
       }
     })();
-    return () => { controls?.stop(); };
+    return () => { stopped = true; controls?.stop(); };
   }, [onScan, continuous, formats]);
+
 
   const frameClass = formats === "barcode"
     ? "border-2 border-primary/80 rounded-lg w-4/5 h-1/4"
