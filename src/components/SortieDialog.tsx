@@ -183,21 +183,53 @@ export function SortieDialog({
         </DialogHeader>
 
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
             <Badge variant="secondary">{allItems.length} produit(s)</Badge>
-            <Button size="sm" variant="outline" onClick={() => setScanning((s) => !s)}>
-              {scanning ? <><X className="mr-1 h-4 w-4" />Fermer scanner</> : <><ScanLine className="mr-1 h-4 w-4" />Scanner QR</>}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant={scanning === "qr" ? "default" : "outline"}
+                onClick={() => setScanning(scanning === "qr" ? null : "qr")}
+              >
+                {scanning === "qr" ? <X className="mr-1 h-4 w-4" /> : <QrIcon className="mr-1 h-4 w-4" />}
+                QR
+              </Button>
+              <Button
+                size="sm"
+                variant={scanning === "barcode" ? "default" : "outline"}
+                onClick={() => setScanning(scanning === "barcode" ? null : "barcode")}
+              >
+                {scanning === "barcode" ? <X className="mr-1 h-4 w-4" /> : <Barcode className="mr-1 h-4 w-4" />}
+                Code-barres
+              </Button>
+            </div>
           </div>
+
+          <form
+            onSubmit={(e) => { e.preventDefault(); handleManualSearch(); }}
+            className="flex gap-2"
+          >
+            <Input
+              value={manualInput}
+              onChange={(e) => setManualInput(e.target.value)}
+              placeholder="Douchette ou recherche (ID, produit, animal…)"
+              autoFocus
+            />
+            <Button type="submit" size="sm" disabled={searching || !manualInput.trim()}>
+              <Search className="h-4 w-4" />
+            </Button>
+          </form>
 
           {scanning && (
             <div className="rounded-md border p-2">
-              <CameraScanner formats="qr" continuous onScan={handleScan} />
+              <CameraScanner formats={scanning} continuous onScan={handleScan} />
               <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                <Camera className="h-3 w-3" /> Scannez un QR pour ajouter automatiquement le produit.
+                <Camera className="h-3 w-3" />
+                {scanning === "qr" ? "Scannez un QR pour ajouter le produit." : "Scannez un code-barres pour ajouter le produit."}
               </p>
             </div>
           )}
+
 
           <div className="max-h-72 overflow-y-auto space-y-2 border rounded-md p-2">
             {allItems.length === 0 && (
