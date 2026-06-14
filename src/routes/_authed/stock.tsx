@@ -115,16 +115,30 @@ function ProductsList() {
 
   const softDelete = useMutation({
     mutationFn: async (id: string) => {
+      const { data: u } = await supabase.auth.getUser();
+      const userId = u.user?.id;
+      const { data: row } = await supabase.from("products")
+        .select("code, produit, animal, fruit, quantite").eq("id", id).maybeSingle();
       const { error } = await supabase.from("products").update({ deleted_at: new Date().toISOString() }).eq("id", id);
       if (error) throw error;
+      if (userId && row && (row.quantite ?? 0) > 0) {
+        await supabase.from("stock_movements").insert({
+          user_id: userId, kind: "product", item_id: id,
+          label: [row.produit, row.animal, row.fruit].filter(Boolean).join(" / "),
+          code: row.code, delta: -(row.quantite ?? 0), reason: "out",
+          note: "Suppression depuis le stock",
+        });
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["products"] });
+      qc.invalidateQueries({ queryKey: ["stock-movements"] });
       qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
       toast.success("Déplacé dans la corbeille");
       setSelected(null);
     },
   });
+
 
   return (
     <div className="space-y-4">
