@@ -33,8 +33,10 @@ export function SortieDialog({
   const qc = useQueryClient();
   const [qtys, setQtys] = useState<Record<string, number>>({});
   const [reason, setReason] = useState("Sortie manuelle");
-  const [scanning, setScanning] = useState(false);
+  const [scanning, setScanning] = useState<"qr" | "barcode" | null>(null);
   const [extra, setExtra] = useState<Product[]>([]);
+  const [manualInput, setManualInput] = useState("");
+  const [searching, setSearching] = useState(false);
 
   // Init quantities (default = 1, capped to stock)
   useEffect(() => {
@@ -55,27 +57,73 @@ export function SortieDialog({
     return Array.from(map.values());
   }, [products, extra]);
 
+  function addProduct(p: Product) {
+    if (allItems.some((x) => x.id === p.id)) {
+      toast.info(`Déjà dans la liste : ${p.code}`);
+      return;
+    }
+    setExtra((prev) => [...prev, p]);
+    setQtys((prev) => ({ ...prev, [p.id]: Math.min(1, p.quantite) }));
+    toast.success(`Ajouté : ${p.produit}`);
+  }
+
   async function handleScan(text: string) {
     let code = text.trim();
     try {
       const parsed = JSON.parse(text);
       if (parsed?.id) code = String(parsed.id);
     } catch { /* raw text */ }
-    if (allItems.some((p) => p.code === code)) {
-      toast.info(`Déjà dans la liste : ${code}`);
-      return;
+    if (code.includes("|")) code = code.split("|")[0].trim();
+    const legacy = code.toUpperCase().match(/[A-Z]{2}\d{4}/);
+    if (legacy) code = legacy[0];
+
+    const tries = Array.from(new Set([code, code.toUpperCase(), code.toLowerCase()]));
+    for (const c of tries) {
+      const { data } = await supabase
+        .from("products").select("id, code, produit, animal, fruit, quantite")
+        .eq("code", c).is("deleted_at", null).maybeSingle();
+      if (data) { addProduct(data as Product); return; }
     }
-    const { data } = await supabase
-      .from("products").select("id, code, produit, animal, fruit, quantite")
-      .eq("code", code).is("deleted_at", null).maybeSingle();
-    if (!data) {
-      toast.error(`Produit ${code} introuvable`);
-      return;
-    }
-    setExtra((prev) => [...prev, data as Product]);
-    setQtys((prev) => ({ ...prev, [data.id]: Math.min(1, data.quantite) }));
-    toast.success(`Ajouté : ${data.produit}`);
+    toast.error(`Produit ${code} introuvable`);
   }
+
+  async function handleManualSearch() {
+    const term = manualInput.trim();
+    if (!term) return;
+    setSearching(true);
+    try {
+      // First try exact code match (douchette)
+      const tries = Array.from(new Set([term, term.toUpperCase(), term.toLowerCase()]));
+      for (const c of tries) {
+        const { data } = await supabase
+          .from("products").select("id, code, produit, animal, fruit, quantite")
+          .eq("code", c).is("deleted_at", null).maybeSingle();
+        if (data) { addProduct(data as Product); setManualInput(""); return; }
+      }
+      // Fallback: text search
+      const like = `%${term}%`;
+      const { data: matches } = await supabase
+        .from("products").select("id, code, produit, animal, fruit, quantite")
+        .is("deleted_at", null).gt("quantite", 0)
+        .or(`produit.ilike.${like},animal.ilike.${like},fruit.ilike.${like},code.ilike.${like}`)
+        .order("produit", { ascending: true }).limit(10);
+      if (!matches || matches.length === 0) {
+        toast.error(`Aucun résultat pour : ${term}`);
+        return;
+      }
+      if (matches.length === 1) {
+        addProduct(matches[0] as Product);
+        setManualInput("");
+        return;
+      }
+      for (const m of matches) addProduct(m as Product);
+      toast.success(`${matches.length} produit(s) ajouté(s)`);
+      setManualInput("");
+    } finally {
+      setSearching(false);
+    }
+  }
+
 
   function removeItem(id: string) {
     setExtra((prev) => prev.filter((p) => p.id !== id));
