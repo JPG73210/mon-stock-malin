@@ -21,6 +21,8 @@ export function CameraScanner({
   const [error, setError] = useState<string | null>(null);
   const lastScannedRef = useRef<string>("");
   const lastTimeRef = useRef<number>(0);
+  const onScanRef = useRef(onScan);
+  useEffect(() => { onScanRef.current = onScan; }, [onScan]);
 
   useEffect(() => {
     const hints = new Map<DecodeHintType, unknown>();
@@ -35,10 +37,10 @@ export function CameraScanner({
       ]);
     }
     hints.set(DecodeHintType.TRY_HARDER, true);
-    // Decode roughly 8x/sec for snappier recognition
     const reader = new BrowserMultiFormatReader(hints, { delayBetweenScanAttempts: 120 });
     let controls: { stop: () => void } | null = null;
     let stopped = false;
+    let stream: MediaStream | null = null;
 
     (async () => {
       try {
@@ -50,26 +52,15 @@ export function CameraScanner({
             height: { ideal: 720 },
           },
         };
-        controls = await reader.decodeFromConstraints(constraints, videoRef.current!, (result) => {
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+        if (stopped) { stream.getTracks().forEach(t => t.stop()); return; }
+        const video = videoRef.current!;
+        video.srcObject = stream;
+        video.setAttribute("playsinline", "true");
+        try { await video.play(); } catch { /* autoplay */ }
 
-          if (!result) return;
-          const text = result.getText();
-          const now = Date.now();
-          if (continuous) {
-            if (text === lastScannedRef.current && now - lastTimeRef.current < 1500) return;
-            lastScannedRef.current = text;
-            lastTimeRef.current = now;
-            onScan(text);
-          } else {
-            controls?.stop();
-            onScan(text);
-          }
-        });
-        if (stopped) controls?.stop();
-
-        // Apply advanced track constraints: continuous AF + slight zoom for small codes
-        const stream = (videoRef.current?.srcObject as MediaStream | null) ?? null;
-        const track = stream?.getVideoTracks?.()[0];
+        // Best-effort continuous autofocus
+        const track = stream.getVideoTracks()[0];
         if (track) {
           const caps: any = track.getCapabilities?.() ?? {};
           const advanced: any[] = [];
@@ -80,12 +71,33 @@ export function CameraScanner({
             try { await track.applyConstraints({ advanced } as any); } catch { /* noop */ }
           }
         }
+
+        controls = await reader.decodeFromVideoElement(video, (result) => {
+          if (!result) return;
+          const text = result.getText();
+          const now = Date.now();
+          if (continuous) {
+            if (text === lastScannedRef.current && now - lastTimeRef.current < 1500) return;
+            lastScannedRef.current = text;
+            lastTimeRef.current = now;
+            onScanRef.current(text);
+          } else {
+            controls?.stop();
+            onScanRef.current(text);
+          }
+        });
+        if (stopped) controls?.stop();
       } catch (e: any) {
         setError(e?.message ?? "Impossible d'accéder à la caméra");
       }
     })();
-    return () => { stopped = true; controls?.stop(); };
-  }, [onScan, continuous, formats]);
+    return () => {
+      stopped = true;
+      controls?.stop();
+      stream?.getTracks().forEach(t => t.stop());
+    };
+  }, [continuous, formats]);
+
 
 
   const frameClass = formats === "barcode"
