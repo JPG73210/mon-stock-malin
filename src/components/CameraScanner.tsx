@@ -133,7 +133,9 @@ export function CameraScanner({
             emitScan(result.getText());
             return;
           }
-          if (decodeError && decodeError.name !== "NotFoundException") {
+          const isNotFound = typeof decodeError?.name === "string"
+            && decodeError.name.includes("NotFoundException");
+          if (decodeError && !isNotFound) {
             console.warn("Scanner decode warning", decodeError);
           }
         });
