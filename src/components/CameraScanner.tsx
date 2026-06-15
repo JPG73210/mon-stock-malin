@@ -25,6 +25,16 @@ export function CameraScanner({
   useEffect(() => { onScanRef.current = onScan; }, [onScan]);
 
   useEffect(() => {
+    type NativeBarcodeDetectorCtor = new (options?: { formats?: string[] }) => {
+      detect: (source: ImageBitmapSource) => Promise<Array<{ rawValue?: string }>>;
+    };
+
+    const nativeFormats = formats === "qr"
+      ? ["qr_code"]
+      : formats === "barcode"
+        ? ["ean_13", "ean_8", "upc_a", "upc_e", "code_128", "code_39", "itf", "codabar"]
+        : ["qr_code", "ean_13", "ean_8", "upc_a", "upc_e", "code_128", "code_39", "itf", "codabar"];
+
     const hints = new Map<DecodeHintType, unknown>();
     if (formats === "qr") {
       hints.set(DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.QR_CODE]);
@@ -37,19 +47,41 @@ export function CameraScanner({
       ]);
     }
     hints.set(DecodeHintType.TRY_HARDER, true);
-    const reader = new BrowserMultiFormatReader(hints, { delayBetweenScanAttempts: 120 });
+    const reader = new BrowserMultiFormatReader(hints, {
+      delayBetweenScanAttempts: 180,
+      delayBetweenScanSuccess: 900,
+      tryPlayVideoTimeout: 3000,
+    });
     let controls: { stop: () => void } | null = null;
     let stopped = false;
     let stream: MediaStream | null = null;
+    let nativeTimer: number | null = null;
+
+    const emitScan = (text: string) => {
+      const now = Date.now();
+      if (continuous) {
+        if (text === lastScannedRef.current && now - lastTimeRef.current < 1500) return;
+        lastScannedRef.current = text;
+        lastTimeRef.current = now;
+        onScanRef.current(text);
+        return;
+      }
+      controls?.stop();
+      if (nativeTimer) window.clearInterval(nativeTimer);
+      stream?.getTracks().forEach((t) => t.stop());
+      onScanRef.current(text);
+    };
 
     (async () => {
       try {
+        setError(null);
         const constraints: MediaStreamConstraints = {
           audio: false,
           video: {
             facingMode: { ideal: "environment" },
             width: { ideal: 1280 },
             height: { ideal: 720 },
+            aspectRatio: { ideal: 1.777777778 },
           },
         };
         stream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -72,18 +104,37 @@ export function CameraScanner({
           }
         }
 
-        controls = await reader.decodeFromVideoElement(video, (result) => {
-          if (!result) return;
-          const text = result.getText();
-          const now = Date.now();
-          if (continuous) {
-            if (text === lastScannedRef.current && now - lastTimeRef.current < 1500) return;
-            lastScannedRef.current = text;
-            lastTimeRef.current = now;
-            onScanRef.current(text);
-          } else {
-            controls?.stop();
-            onScanRef.current(text);
+        const NativeBarcodeDetector = (globalThis as typeof globalThis & {
+          BarcodeDetector?: NativeBarcodeDetectorCtor;
+        }).BarcodeDetector;
+
+        if (NativeBarcodeDetector) {
+          try {
+            const detector = new NativeBarcodeDetector({ formats: nativeFormats });
+            nativeTimer = window.setInterval(async () => {
+              if (stopped || !videoRef.current) return;
+              const activeVideo = videoRef.current;
+              if (activeVideo.readyState < HTMLMediaElement.HAVE_ENOUGH_DATA) return;
+              try {
+                const results = await detector.detect(activeVideo);
+                const raw = results.find((item) => item.rawValue?.trim())?.rawValue?.trim();
+                if (raw) emitScan(raw);
+              } catch {
+                /* fallback to ZXing below */
+              }
+            }, 250);
+          } catch {
+            /* fallback to ZXing below */
+          }
+        }
+
+        controls = await reader.decodeFromStream(stream, video, (result, decodeError) => {
+          if (result) {
+            emitScan(result.getText());
+            return;
+          }
+          if (decodeError && decodeError.name !== "NotFoundException") {
+            console.warn("Scanner decode warning", decodeError);
           }
         });
         if (stopped) controls?.stop();
@@ -93,6 +144,7 @@ export function CameraScanner({
     })();
     return () => {
       stopped = true;
+      if (nativeTimer) window.clearInterval(nativeTimer);
       controls?.stop();
       stream?.getTracks().forEach(t => t.stop());
     };
