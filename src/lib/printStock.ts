@@ -46,7 +46,7 @@ function groupBy<T extends { emplacement: string }>(items: T[]): Map<string, T[]
 }
 
 async function qrDataUrl(payload: string) {
-  return QRCode.toDataURL(payload, { width: 256, margin: 0 });
+  return QRCode.toDataURL(payload, { width: 256, margin: 2 });
 }
 
 /** Charge la photo Supabase et retourne un data URL JPEG, ou null. */

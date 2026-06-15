@@ -85,7 +85,7 @@ export async function generateLabelPdf(
     bague: data.bague, date: data.date, poids: data.poids, unite: data.unite,
   });
   const qrPx = Math.max(512, Math.round(Math.min(w, h) * 32)); // ~32 px/mm pour modules nets
-  const qr = await QRCode.toDataURL(payload, { width: qrPx, margin: 0 });
+  const qr = await QRCode.toDataURL(payload, { width: qrPx, margin: 2 });
 
   for (let i = 0; i < quantite; i++) {
     if (i > 0) doc.addPage([pageW, pageH], pageW > pageH ? "landscape" : "portrait");
