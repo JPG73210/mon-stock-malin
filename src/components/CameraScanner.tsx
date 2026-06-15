@@ -56,6 +56,7 @@ export function CameraScanner({
     let stopped = false;
     let stream: MediaStream | null = null;
     let nativeTimer: number | null = null;
+    let nativeBusy = false;
 
     const emitScan = (text: string) => {
       const now = Date.now();
@@ -75,6 +76,8 @@ export function CameraScanner({
     (async () => {
       try {
         setError(null);
+        const video = videoRef.current;
+        if (!video) return;
         const constraints: MediaStreamConstraints = {
           audio: false,
           video: {
@@ -84,15 +87,26 @@ export function CameraScanner({
             aspectRatio: { ideal: 1.777777778 },
           },
         };
-        stream = await navigator.mediaDevices.getUserMedia(constraints);
-        if (stopped) { stream.getTracks().forEach(t => t.stop()); return; }
-        const video = videoRef.current!;
-        video.srcObject = stream;
-        video.setAttribute("playsinline", "true");
-        try { await video.play(); } catch { /* autoplay */ }
+        controls = await reader.decodeFromConstraints(constraints, video, (result, decodeError) => {
+          if (result) {
+            emitScan(result.getText());
+            return;
+          }
+          const isNotFound = typeof decodeError?.name === "string"
+            && decodeError.name.includes("NotFoundException");
+          if (decodeError && !isNotFound) {
+            console.warn("Scanner decode warning", decodeError);
+          }
+        });
+        stream = video.srcObject instanceof MediaStream ? video.srcObject : null;
+        if (stopped) {
+          controls.stop();
+          stream?.getTracks().forEach((t) => t.stop());
+          return;
+        }
 
         // Best-effort continuous autofocus
-        const track = stream.getVideoTracks()[0];
+        const track = stream?.getVideoTracks()[0];
         if (track) {
           const caps: any = track.getCapabilities?.() ?? {};
           const advanced: any[] = [];
@@ -112,34 +126,24 @@ export function CameraScanner({
           try {
             const detector = new NativeBarcodeDetector({ formats: nativeFormats });
             nativeTimer = window.setInterval(async () => {
-              if (stopped || !videoRef.current) return;
+              if (stopped || nativeBusy || !videoRef.current) return;
               const activeVideo = videoRef.current;
               if (activeVideo.readyState < HTMLMediaElement.HAVE_ENOUGH_DATA) return;
               try {
+                nativeBusy = true;
                 const results = await detector.detect(activeVideo);
                 const raw = results.find((item) => item.rawValue?.trim())?.rawValue?.trim();
                 if (raw) emitScan(raw);
               } catch {
                 /* fallback to ZXing below */
+              } finally {
+                nativeBusy = false;
               }
             }, 250);
           } catch {
             /* fallback to ZXing below */
           }
         }
-
-        controls = await reader.decodeFromStream(stream, video, (result, decodeError) => {
-          if (result) {
-            emitScan(result.getText());
-            return;
-          }
-          const isNotFound = typeof decodeError?.name === "string"
-            && decodeError.name.includes("NotFoundException");
-          if (decodeError && !isNotFound) {
-            console.warn("Scanner decode warning", decodeError);
-          }
-        });
-        if (stopped) controls?.stop();
       } catch (e: any) {
         setError(e?.message ?? "Impossible d'accéder à la caméra");
       }
