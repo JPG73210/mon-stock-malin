@@ -46,14 +46,12 @@ export function CameraScanner({
           audio: false,
           video: {
             facingMode: { ideal: "environment" },
-            width: { ideal: 1920 },
-            height: { ideal: 1080 },
-            frameRate: { ideal: 30 },
-            // @ts-expect-error vendor-specific hints, ignored if unsupported
-            focusMode: "continuous",
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
           },
         };
         controls = await reader.decodeFromConstraints(constraints, videoRef.current!, (result) => {
+
           if (!result) return;
           const text = result.getText();
           const now = Date.now();
@@ -97,7 +95,7 @@ export function CameraScanner({
   return (
     <div className="space-y-3">
       <div className="relative overflow-hidden rounded-lg bg-black aspect-video">
-        <video ref={videoRef} className="w-full h-full object-cover" />
+        <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           <div className={frameClass} />
         </div>
