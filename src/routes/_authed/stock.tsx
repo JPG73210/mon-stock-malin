@@ -557,6 +557,9 @@ export function WinesList() {
               </div>
               {selected.notes && <p className="text-sm text-muted-foreground border-t pt-3">{selected.notes}</p>}
               <DialogFooter>
+                <Button variant="outline" onClick={() => sortirBouteille.mutate(selected.id)} disabled={sortirBouteille.isPending}>
+                  <ArrowLeftRight className="mr-2 h-4 w-4" /> Sortir 1 bouteille
+                </Button>
                 <Button variant="outline" onClick={() => toggleFavori.mutate({ id: selected.id, fav: !selected.favori })}>
                   <Heart className={`mr-2 h-4 w-4 ${selected.favori ? "fill-accent text-accent" : ""}`} /> {selected.favori ? "Retirer" : "À racheter"}
                 </Button>
