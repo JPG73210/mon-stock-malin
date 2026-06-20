@@ -582,6 +582,7 @@ export function WinesList() {
         </DialogContent>
       </Dialog>
       <WineEditDialog wine={editing} open={!!editing} onClose={() => setEditing(null)} />
+      <WineSortieDialog open={sortieOpen} onClose={() => setSortieOpen(false)} />
     </div>
   );
 }
