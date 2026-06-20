@@ -488,15 +488,20 @@ export function WinesList() {
       </div>
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <p className="text-sm text-muted-foreground">{filtered.length} vin(s)</p>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() =>
-            printStockWinesA4(filtered as any).catch(() => toast.error("Impression impossible"))
-          }
-        >
-          <Printer className="mr-1 h-4 w-4" /> Imprimer stock (A4)
-        </Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button size="sm" variant="outline" onClick={() => setSortieOpen(true)}>
+            <ScanLine className="mr-1 h-4 w-4" /> Scanner sortie
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() =>
+              printStockWinesA4(filtered as any).catch(() => toast.error("Impression impossible"))
+            }
+          >
+            <Printer className="mr-1 h-4 w-4" /> Imprimer stock (A4)
+          </Button>
+        </div>
       </div>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {filtered.map((w: any) => (
