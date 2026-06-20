@@ -329,6 +329,7 @@ export function WinesList() {
   const [selected, setSelected] = useState<any | null>(null);
   const [editing, setEditing] = useState<any | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [sortieOpen, setSortieOpen] = useState(false);
 
   const { data: wines } = useQuery({
     queryKey: ["wines"],
