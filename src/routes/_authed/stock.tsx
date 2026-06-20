@@ -22,6 +22,7 @@ import { ProductEditDialog } from "@/components/ProductEditDialog";
 import { WineEditDialog } from "@/components/WineEditDialog";
 import { LabelPreviewDialog } from "@/components/LabelPreviewDialog";
 import { SortieDialog } from "@/components/SortieDialog";
+import { WineSortieDialog } from "@/components/WineSortieDialog";
 import { useSelection } from "@/hooks/use-selection";
 import { cn } from "@/lib/utils";
 import coffreReserve from "@/assets/coffre-reserve.png";
@@ -328,6 +329,7 @@ export function WinesList() {
   const [selected, setSelected] = useState<any | null>(null);
   const [editing, setEditing] = useState<any | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [sortieOpen, setSortieOpen] = useState(false);
 
   const { data: wines } = useQuery({
     queryKey: ["wines"],
@@ -486,15 +488,20 @@ export function WinesList() {
       </div>
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <p className="text-sm text-muted-foreground">{filtered.length} vin(s)</p>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() =>
-            printStockWinesA4(filtered as any).catch(() => toast.error("Impression impossible"))
-          }
-        >
-          <Printer className="mr-1 h-4 w-4" /> Imprimer stock (A4)
-        </Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button size="sm" variant="outline" onClick={() => setSortieOpen(true)}>
+            <ScanLine className="mr-1 h-4 w-4" /> Scanner sortie
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() =>
+              printStockWinesA4(filtered as any).catch(() => toast.error("Impression impossible"))
+            }
+          >
+            <Printer className="mr-1 h-4 w-4" /> Imprimer stock (A4)
+          </Button>
+        </div>
       </div>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {filtered.map((w: any) => (
@@ -575,6 +582,7 @@ export function WinesList() {
         </DialogContent>
       </Dialog>
       <WineEditDialog wine={editing} open={!!editing} onClose={() => setEditing(null)} />
+      <WineSortieDialog open={sortieOpen} onClose={() => setSortieOpen(false)} />
     </div>
   );
 }
