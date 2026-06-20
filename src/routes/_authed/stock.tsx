@@ -389,6 +389,39 @@ export function WinesList() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["wines"] }),
   });
 
+  const sortirBouteille = useMutation({
+    mutationFn: async (id: string) => {
+      const { data: u } = await supabase.auth.getUser();
+      const userId = u.user?.id;
+      const { data: row } = await supabase.from("wines")
+        .select("id, chateau, type_vin, couleur, millesime, quantite").eq("id", id).maybeSingle();
+      if (!row) throw new Error("Vin introuvable");
+      const qty = Math.max(1, row.quantite ?? 1);
+      const newQty = (row.quantite ?? 1) - 1;
+      if (newQty <= 0) {
+        await supabase.from("wines").update({ deleted_at: new Date().toISOString(), quantite: 0 }).eq("id", id);
+      } else {
+        await supabase.from("wines").update({ quantite: newQty }).eq("id", id);
+      }
+      if (userId) {
+        await supabase.from("stock_movements").insert({
+          user_id: userId, kind: "wine", item_id: id,
+          label: [row.chateau, row.type_vin, row.couleur, row.millesime].filter(Boolean).join(" / "),
+          code: null, delta: -1, reason: "out",
+          note: "Sortie d'une bouteille",
+        });
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["wines"] });
+      qc.invalidateQueries({ queryKey: ["stock-movements"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
+      toast.success("Bouteille sortie");
+      setSelected(null);
+    },
+    onError: (e: any) => toast.error(e.message ?? "Erreur"),
+  });
+
   const softDelete = useMutation({
     mutationFn: async (id: string) => {
       const { data: u } = await supabase.auth.getUser();
