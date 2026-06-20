@@ -22,6 +22,7 @@ import { ProductEditDialog } from "@/components/ProductEditDialog";
 import { WineEditDialog } from "@/components/WineEditDialog";
 import { LabelPreviewDialog } from "@/components/LabelPreviewDialog";
 import { SortieDialog } from "@/components/SortieDialog";
+import { WineSortieDialog } from "@/components/WineSortieDialog";
 import { useSelection } from "@/hooks/use-selection";
 import { cn } from "@/lib/utils";
 import coffreReserve from "@/assets/coffre-reserve.png";
