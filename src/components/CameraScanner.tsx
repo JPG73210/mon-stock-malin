@@ -36,7 +36,7 @@ export function CameraScanner({
         ? ["ean_13", "ean_8", "upc_a", "upc_e", "code_128", "code_39", "itf", "codabar"]
         : ["qr_code", "ean_13", "ean_8", "upc_a", "upc_e", "code_128", "code_39", "itf", "codabar"];
 
-    const hints = new Map<DecodeHintType, unknown>();
+    const hints = new Map<number, unknown>();
     if (formats === "qr") {
       hints.set(DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.QR_CODE]);
     } else if (formats === "barcode") {
