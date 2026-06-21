@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { BrowserMultiFormatReader, BarcodeFormat } from "@zxing/browser";
-import { DecodeHintType } from "@zxing/library";
+import pkg from "@zxing/library";
+const { DecodeHintType } = pkg;
 import { Button } from "@/components/ui/button";
 import { Camera, X } from "lucide-react";
 
