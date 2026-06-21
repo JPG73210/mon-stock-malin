@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { BrowserMultiFormatReader, BarcodeFormat } from "@zxing/browser";
 import pkg from "@zxing/library";
 const { DecodeHintType } = pkg;
+type DecodeHintType = typeof DecodeHintType[keyof typeof DecodeHintType];
 import { Button } from "@/components/ui/button";
 import { Camera, X } from "lucide-react";
 
