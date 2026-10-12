@@ -95,7 +95,7 @@ export function SortieDialog({
   }
 
   async function handleManualSearch() {
-    const term = manualInput.trim();
+    const term = extractCode(manualInput);
     if (!term) return;
     setSearching(true);
     try {
