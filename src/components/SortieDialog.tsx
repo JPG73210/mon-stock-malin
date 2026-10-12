@@ -67,15 +67,22 @@ export function SortieDialog({
     toast.success(`Ajouté : ${p.produit}`);
   }
 
-  async function handleScan(text: string) {
-    let code = text.trim();
+  /** Extrait l'ID produit depuis le contenu brut d'un QR (JSON, pipe, ou texte). */
+  function extractCode(raw: string): string {
+    let code = raw.trim();
     try {
-      const parsed = JSON.parse(text);
+      const parsed = JSON.parse(raw);
       if (parsed?.id) code = String(parsed.id);
+      else if (parsed?.code) code = String(parsed.code);
     } catch { /* raw text */ }
     if (code.includes("|")) code = code.split("|")[0].trim();
     const legacy = code.toUpperCase().match(/[A-Z]{2}\d{4}/);
     if (legacy) code = legacy[0];
+    return code;
+  }
+
+  async function handleScan(text: string) {
+    const code = extractCode(text);
 
     const tries = Array.from(new Set([code, code.toUpperCase(), code.toLowerCase()]));
     for (const c of tries) {
